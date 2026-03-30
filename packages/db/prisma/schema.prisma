@@ -19,6 +19,8 @@ model User {
   stripeCustomerId   String?            @unique
   subscriptionStatus SubscriptionStatus @default(TRIAL)
   trialEndsAt        DateTime?
+  onboardingStep        Int       @default(0)
+  onboardingCompletedAt DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -35,13 +37,15 @@ model UserProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  roles       String[]
-  values      String[]
-  q1Goals     String[]
-  topPriority String?
-  wakeUpTime  String     @default("07:00")
-  sleepTime   String     @default("22:00")
-  lifeAreas   LifeArea[]
+  name          String?
+  roles         String[]
+  values        String[]
+  q1Goals       String[]
+  topPriority   String?
+  neglectedArea String?
+  wakeUpTime    String     @default("07:00")
+  sleepTime     String     @default("22:00")
+  lifeAreas     LifeArea[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -52,8 +56,12 @@ model LifeArea {
   profileId String
   profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   name      String
-  priority  Int
+  isCustom  Boolean     @default(false)
+  goal90days String?
+  priority  Int         @default(5)
   isActive  Boolean     @default(true)
+
+  createdAt DateTime @default(now())
 }
 
 model Task {

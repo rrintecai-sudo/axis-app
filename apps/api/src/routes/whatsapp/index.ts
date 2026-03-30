@@ -5,6 +5,7 @@ import { prisma } from '@axis/db';
 import { env } from '../../env.js';
 import { sendWhatsAppMessage } from '../../services/whatsapp.js';
 import { fetchWhatsAppMedia } from '../../services/whatsapp-media.js';
+import { handleOnboardingMessage } from '../../services/onboarding.service.js';
 
 // ---------------------------------------------------------------------------
 // Types for Meta WhatsApp Cloud API payload
@@ -108,15 +109,15 @@ async function processIncomingMessage(
   try {
     const { user, isNew } = await getOrCreateUser(phoneNumber);
 
-    if (isNew) {
-      await sendWhatsAppMessage(
-        phoneNumber,
-        `Hola, soy *AXIS* — tu asistente personal de vida.\n\nEstoy aquí para ayudarte a vivir con dirección, enfoque y propósito — no solo a estar ocupado.\n\n¿Cómo te llamas?`,
-      );
+    const { chat, transcribeAudio } = await import('@axis/ai');
+
+    // Onboarding activo — todos los mensajes van al flujo de onboarding
+    if (user.onboardingStep < 6) {
+      const text = message.type === 'text' ? message.text.body : '';
+      const response = await handleOnboardingMessage(user, text);
+      await sendWhatsAppMessage(phoneNumber, response);
       return;
     }
-
-    const { chat, transcribeAudio } = await import('@axis/ai');
 
     if (message.type === 'text') {
       const response = await chat(user.id, message.text.body);

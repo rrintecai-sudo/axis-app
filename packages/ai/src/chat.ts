@@ -10,6 +10,35 @@ import {
 } from './context.js';
 import { retrieveRelevantMemories, processAndSaveMemories } from './memory.js';
 
+function buildUserContext(profile: {
+  name: string | null;
+  lifeAreas: Array<{ name: string; isActive: boolean; goal90days: string | null }>;
+  neglectedArea: string | null;
+  wakeUpTime: string;
+}): string {
+  const areas = profile.lifeAreas
+    .filter((a) => a.isActive)
+    .map((a) => `- ${a.name}: ${a.goal90days ?? 'sin meta definida aún'}`)
+    .join('\n');
+
+  return `## Lo que sé de este usuario
+
+Nombre: ${profile.name ?? 'desconocido'}
+
+Áreas de vida activas y sus metas de 90 días:
+${areas || 'Sin áreas definidas aún'}
+
+Área que admitió estar descuidando: ${profile.neglectedArea ?? 'no definida'}
+
+Recibe su guía del día a las: ${profile.wakeUpTime}
+
+## Cómo usar este contexto
+- Cuando el usuario mencione trabajo, conecta con su meta de trabajo
+- Si el usuario está saturado, prioriza basado en sus áreas y metas
+- Si detectas que está ignorando su área descuidada, nómbralo con respeto
+- Nunca preguntes cosas que ya sabes de este contexto`.trim();
+}
+
 export interface ChatOptions {
   /** Base64-encoded image to send alongside the message (GPT-4o vision) */
   imageBase64?: string;
@@ -23,7 +52,7 @@ export async function chat(userId: string, userMessage: string, options?: ChatOp
     include: {
       profile: {
         include: {
-          lifeAreas: true,
+          lifeAreas: { orderBy: { priority: 'asc' } },
         },
       },
     },
@@ -78,9 +107,12 @@ export async function chat(userId: string, userMessage: string, options?: ChatOp
   // 5. Build system prompt by replacing placeholders
   const profile = user.profile;
 
-  const profileContext = profile
-    ? buildUserProfileContext(profile)
-    : 'El usuario aún no ha completado su perfil.';
+  // Post-onboarding: usar contexto completo del usuario
+  const profileContext = profile && user.onboardingStep >= 6
+    ? buildUserContext(profile)
+    : profile
+      ? buildUserProfileContext(profile)
+      : 'El usuario está en proceso de onboarding.';
 
   const goalsContext =
     profile && profile.q1Goals.length > 0
