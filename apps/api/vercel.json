@@ -12,14 +12,5 @@
       "dest": "dist/index.js"
     }
   ],
-  "crons": [
-    {
-      "path": "/cron/brief",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/cron/evening",
-      "schedule": "0 * * * *"
-    }
-  ]
+  "crons": []
 }
