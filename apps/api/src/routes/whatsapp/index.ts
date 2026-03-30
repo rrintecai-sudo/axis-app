@@ -45,7 +45,7 @@ interface MetaWebhookPayload {
 function isValidSignature(rawBody: string, signature: string): boolean {
   try {
     const expected = `sha256=${crypto
-      .createHmac('sha256', env.WHATSAPP_ACCESS_TOKEN)
+      .createHmac('sha256', env.WHATSAPP_APP_SECRET)
       .update(rawBody)
       .digest('hex')}`;
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
