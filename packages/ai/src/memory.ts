@@ -1,50 +1,20 @@
 import { prisma } from '@axis/db';
 import type { Memory, MemoryCategory } from '@axis/db';
-import { anthropic, MODEL } from './client.js';
+import { openai, MODEL } from './client.js';
 
 // ---------------------------------------------------------------------------
 // Embedding
 // ---------------------------------------------------------------------------
 
-async function generateEmbeddingViaOpenAI(text: string): Promise<number[]> {
-  const apiKey = process.env['OPENAI_API_KEY'];
-  if (!apiKey) {
-    // Dev fallback: return 1536 zeros — semantic search won't work but system starts
-    return new Array<number>(1536).fill(0);
-  }
-
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'text-embedding-3-small',
-      input: text,
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`OpenAI embeddings error ${response.status}: ${body}`);
-  }
-
-  const data = (await response.json()) as {
-    data: Array<{ embedding: number[] }>;
-  };
-
-  const embedding = data.data[0]?.embedding;
-  if (!embedding) {
-    throw new Error('OpenAI embeddings returned no vector');
-  }
-
-  return embedding;
-}
-
 export async function generateEmbedding(text: string): Promise<number[]> {
   try {
-    return await generateEmbeddingViaOpenAI(text);
+    const response = await openai.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: text,
+    });
+    const embedding = response.data[0]?.embedding;
+    if (!embedding) throw new Error('No embedding returned');
+    return embedding;
   } catch (err) {
     console.error('[memory] generateEmbedding failed, using zero vector:', err);
     return new Array<number>(1536).fill(0);
@@ -178,22 +148,19 @@ Reglas:
 - Máximo 5 memorias por conversación`;
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await openai.chat.completions.create({
       model: MODEL,
       max_tokens: 512,
-      system: systemPrompt,
       messages: [
-        {
-          role: 'user',
-          content: `Conversación:\n${transcript}`,
-        },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Conversación:\n${transcript}` },
       ],
     });
 
-    const firstBlock = response.content[0];
-    if (!firstBlock || firstBlock.type !== 'text') return [];
+    const content = response.choices[0]?.message?.content;
+    if (!content) return [];
 
-    const raw = firstBlock.text.trim();
+    const raw = content.trim();
 
     // Strip markdown code fences if present
     const jsonStr = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');

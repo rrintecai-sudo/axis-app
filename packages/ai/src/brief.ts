@@ -1,6 +1,6 @@
 import { prisma } from '@axis/db';
 import type { Brief } from '@axis/db';
-import { anthropic, MODEL } from './client.js';
+import { openai, MODEL } from './client.js';
 import { BRIEF_PROMPT } from './prompts/system.js';
 import { buildUserProfileContext, buildTasksContext } from './context.js';
 import { retrieveRelevantMemories } from './memory.js';
@@ -101,18 +101,16 @@ export async function generateBrief(userId: string, date: Date): Promise<Brief> 
   let briefContent: string;
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await openai.chat.completions.create({
       model: MODEL,
       max_tokens: 512,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const firstBlock = response.content[0];
-    if (!firstBlock || firstBlock.type !== 'text') {
-      throw new Error('Claude returned no text for generateBrief');
-    }
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error('OpenAI returned no text for generateBrief');
 
-    briefContent = firstBlock.text.trim();
+    briefContent = content.trim();
   } catch (err) {
     console.error('[brief] Claude call failed:', err);
     throw err;

@@ -1,6 +1,6 @@
 import { prisma } from '@axis/db';
 import type { Task } from '@axis/db';
-import { anthropic, MODEL } from './client.js';
+import { openai, MODEL } from './client.js';
 import { buildUserProfileContext } from './context.js';
 
 // ---------------------------------------------------------------------------
@@ -74,19 +74,19 @@ ${goalsContext}
 ${JSON.stringify(tasksJson, null, 2)}`;
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await openai.chat.completions.create({
       model: MODEL,
       max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
     });
 
-    const firstBlock = response.content[0];
-    if (!firstBlock || firstBlock.type !== 'text') {
-      throw new Error('Claude returned no text for prioritizeTasks');
-    }
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error('OpenAI returned no text for prioritizeTasks');
 
-    const raw = firstBlock.text.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    const raw = content.trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
     const parsed = JSON.parse(raw) as unknown;
 
     if (!Array.isArray(parsed)) {

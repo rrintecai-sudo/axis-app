@@ -8,6 +8,7 @@ import taskRoutes from './routes/tasks/index.js';
 import briefRoutes from './routes/briefs/index.js';
 import userRoutes from './routes/users/index.js';
 import stripeRoutes from './routes/stripe/index.js';
+import cronRoutes from './routes/cron/index.js';
 
 export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   const isDev = process.env['NODE_ENV'] !== 'production';
@@ -96,6 +97,7 @@ export async function buildApp(): Promise<ReturnType<typeof Fastify>> {
   await fastify.register(briefRoutes);
   await fastify.register(userRoutes);
   await fastify.register(stripeRoutes);
+  await fastify.register(cronRoutes);
 
   return fastify;
 }

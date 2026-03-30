@@ -9,7 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.27.0",
+    "openai": "^4.52.0",
     "@axis/db": "workspace:*",
     "@axis/shared": "workspace:*"
   },

@@ -1,6 +1,6 @@
 import { prisma } from '@axis/db';
 import type { MessageRole } from '@axis/db';
-import { anthropic, MODEL, MAX_TOKENS } from './client.js';
+import { openai, MODEL, MAX_TOKENS } from './client.js';
 import { AXIS_SYSTEM_PROMPT } from './prompts/system.js';
 import {
   buildUserProfileContext,
@@ -108,25 +108,27 @@ export async function chat(userId: string, userMessage: string): Promise<string>
   // Add the current user message
   claudeMessages.push({ role: 'user', content: userMessage });
 
-  // 8. Call Claude
+  // 8. Call OpenAI
   let assistantText: string;
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await openai.chat.completions.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: systemPrompt,
-      messages: claudeMessages,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...claudeMessages,
+      ],
     });
 
-    const firstBlock = response.content[0];
-    if (!firstBlock || firstBlock.type !== 'text') {
-      throw new Error('Claude returned no text content');
+    const choice = response.choices[0];
+    if (!choice?.message?.content) {
+      throw new Error('OpenAI returned no text content');
     }
 
-    assistantText = firstBlock.text;
+    assistantText = choice.message.content;
   } catch (err) {
-    console.error('[chat] Claude API call failed:', err);
+    console.error('[chat] OpenAI API call failed:', err);
     throw err;
   }
 

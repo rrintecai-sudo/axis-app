@@ -1,5 +1,5 @@
 import { prisma } from '@axis/db';
-import { anthropic, MODEL } from './client.js';
+import { openai, MODEL } from './client.js';
 import { WEEKLY_ANALYSIS_PROMPT } from './prompts/system.js';
 import { buildUserProfileContext } from './context.js';
 
@@ -89,20 +89,18 @@ export async function generateWeeklyAnalysis(userId: string): Promise<string> {
     .replace('{SKIPPED_TASKS}', formatTaskList(skippedTasks))
     .replace('{WEEKLY_CONVERSATIONS}', weeklyConversations);
 
-  // 6. Call Claude
+  // 6. Call OpenAI
   try {
-    const response = await anthropic.messages.create({
+    const response = await openai.chat.completions.create({
       model: MODEL,
       max_tokens: 768,
       messages: [{ role: 'user', content: prompt }],
     });
 
-    const firstBlock = response.content[0];
-    if (!firstBlock || firstBlock.type !== 'text') {
-      throw new Error('Claude returned no text for generateWeeklyAnalysis');
-    }
+    const content = response.choices[0]?.message?.content;
+    if (!content) throw new Error('OpenAI returned no text for generateWeeklyAnalysis');
 
-    return firstBlock.text.trim();
+    return content.trim();
   } catch (err) {
     console.error('[weekly] generateWeeklyAnalysis failed:', err);
     throw err;
