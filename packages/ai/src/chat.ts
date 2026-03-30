@@ -1,5 +1,6 @@
 import { prisma } from '@axis/db';
 import type { MessageRole } from '@axis/db';
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { openai, MODEL, MAX_TOKENS } from './client.js';
 import { AXIS_SYSTEM_PROMPT } from './prompts/system.js';
 import {
@@ -104,29 +105,28 @@ export async function chat(userId: string, userMessage: string, options?: ChatOp
   });
 
   // 7. Build messages array for OpenAI (full history + new user message)
-  type TextPart = { type: 'text'; text: string };
-  type ImagePart = { type: 'image_url'; image_url: { url: string } };
-  type MessageContent = string | Array<TextPart | ImagePart>;
-
-  const claudeMessages: Array<{ role: 'user' | 'assistant'; content: MessageContent }> = [];
+  const openaiMessages: ChatCompletionMessageParam[] = [];
 
   for (const m of lastMessages) {
-    const normalizedRole = m.role === 'USER' || m.role === 'user' ? 'user' : 'assistant';
-    claudeMessages.push({ role: normalizedRole, content: m.content });
+    if (m.role === 'USER' || m.role === 'user') {
+      openaiMessages.push({ role: 'user', content: m.content });
+    } else {
+      openaiMessages.push({ role: 'assistant', content: m.content });
+    }
   }
 
   // Add the current user message (with optional image for GPT-4o vision)
   if (options?.imageBase64 && options?.imageMimeType) {
     const imageUrl = `data:${options.imageMimeType};base64,${options.imageBase64}`;
-    const contentParts: Array<TextPart | ImagePart> = [
-      { type: 'image_url', image_url: { url: imageUrl } },
-    ];
-    if (userMessage) {
-      contentParts.push({ type: 'text', text: userMessage });
-    }
-    claudeMessages.push({ role: 'user', content: contentParts });
+    openaiMessages.push({
+      role: 'user',
+      content: [
+        { type: 'image_url', image_url: { url: imageUrl } },
+        ...(userMessage ? [{ type: 'text' as const, text: userMessage }] : []),
+      ],
+    });
   } else {
-    claudeMessages.push({ role: 'user', content: userMessage });
+    openaiMessages.push({ role: 'user', content: userMessage });
   }
 
   // 8. Call OpenAI
@@ -138,7 +138,7 @@ export async function chat(userId: string, userMessage: string, options?: ChatOp
       max_tokens: MAX_TOKENS,
       messages: [
         { role: 'system', content: systemPrompt },
-        ...claudeMessages,
+        ...openaiMessages,
       ],
     });
 
