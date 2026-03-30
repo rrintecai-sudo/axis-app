@@ -1,0 +1,178 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  name               String?
+  phone              String?            @unique
+  timezone           String             @default("America/New_York")
+  stripeCustomerId   String?            @unique
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  trialEndsAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  profile       UserProfile?
+  tasks         Task[]
+  conversations Conversation[]
+  memories      Memory[]
+  briefs        Brief[]
+  subscription  Subscription?
+}
+
+model UserProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  roles       String[]
+  values      String[]
+  q1Goals     String[]
+  topPriority String?
+  wakeUpTime  String     @default("07:00")
+  sleepTime   String     @default("22:00")
+  lifeAreas   LifeArea[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LifeArea {
+  id        String      @id @default(cuid())
+  profileId String
+  profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  priority  Int
+  isActive  Boolean     @default(true)
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?
+  lifeArea     String?
+  priority     Int        @default(5)
+  impact       Int        @default(5)
+  dueDate      DateTime?
+  scheduledFor DateTime?
+  status       TaskStatus @default(PENDING)
+  aiReason     String?
+  isTopTask    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  completedAt  DateTime?
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   Channel   @default(WHATSAPP)
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  whatsappId     String?
+  createdAt      DateTime     @default(now())
+}
+
+model Memory {
+  id        String                      @id @default(cuid())
+  userId    String
+  user      User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  embedding Unsupported("vector(1536)")?
+  category  MemoryCategory
+  relevance Float                       @default(1.0)
+  createdAt DateTime                    @default(now())
+
+  @@index([userId])
+}
+
+model Brief {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime
+  content        String
+  topPriorities  String[]
+  topTask        String?
+  sentAt         DateTime?
+  openedAt       DateTime?
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String?            @unique
+  plan                 Plan               @default(STARTER)
+  status               SubscriptionStatus @default(TRIAL)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+enum Plan {
+  STARTER
+  PRO
+  ANNUAL
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  SKIPPED
+}
+
+enum Channel {
+  WHATSAPP
+  WEB
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+enum MemoryCategory {
+  GOAL
+  COMMITMENT
+  PERSON
+  INSIGHT
+  PATTERN
+  CONTEXT
+}

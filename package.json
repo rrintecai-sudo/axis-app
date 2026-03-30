@@ -1,0 +1,28 @@
+{
+  "name": "axis",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "db:migrate": "pnpm --filter=@axis/db migrate",
+    "db:studio": "pnpm --filter=@axis/db studio",
+    "db:seed": "pnpm --filter=@axis/db seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.8.21",
+    "typescript": "^5.4.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "msgpackr-extract"
+    ]
+  }
+}
