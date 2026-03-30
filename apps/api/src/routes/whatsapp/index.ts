@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import type { FastifyPluginAsync } from 'fastify';
+import { waitUntil } from '@vercel/functions';
 import { prisma } from '@axis/db';
 import { env } from '../../env.js';
 import { sendWhatsAppMessage } from '../../services/whatsapp.js';
@@ -191,8 +192,8 @@ const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
 
     request.log.info(`[whatsapp] Processing message from ${phoneNumber}: "${messageText}"`);
 
-    // Process in background — reply already sent
-    void processIncomingMessage(phoneNumber, messageText, whatsappMessageId);
+    // Keep function alive until processing completes (Vercel waitUntil)
+    waitUntil(processIncomingMessage(phoneNumber, messageText, whatsappMessageId));
   });
 };
 
