@@ -5,4 +5,4 @@ dist/
 *.env
 *.env.local
 .DS_Store
-apps/api/api/index.js
+# apps/api/api/index.js is committed as a stub and overwritten by esbuild
