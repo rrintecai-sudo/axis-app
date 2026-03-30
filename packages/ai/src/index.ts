@@ -1,5 +1,6 @@
 export * from './client.js';
 export * from './chat.js';
+export * from './transcribe.js';
 export * from './memory.js';
 export * from './prioritize.js';
 export * from './brief.js';

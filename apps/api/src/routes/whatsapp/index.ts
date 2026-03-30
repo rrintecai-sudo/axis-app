@@ -4,6 +4,7 @@ import { waitUntil } from '@vercel/functions';
 import { prisma } from '@axis/db';
 import { env } from '../../env.js';
 import { sendWhatsAppMessage } from '../../services/whatsapp.js';
+import { fetchWhatsAppMedia } from '../../services/whatsapp-media.js';
 
 // ---------------------------------------------------------------------------
 // Types for Meta WhatsApp Cloud API payload
@@ -16,14 +17,43 @@ interface WhatsAppTextMessage {
   text: { body: string };
 }
 
+interface WhatsAppAudioMessage {
+  id: string;
+  from: string;
+  timestamp: string;
+  type: 'audio';
+  audio: { id: string; mime_type: string };
+}
+
+interface WhatsAppImageMessage {
+  id: string;
+  from: string;
+  timestamp: string;
+  type: 'image';
+  image: { id: string; mime_type: string; caption?: string };
+}
+
+interface WhatsAppDocumentMessage {
+  id: string;
+  from: string;
+  timestamp: string;
+  type: 'document';
+  document: { id: string; filename: string; mime_type: string; caption?: string };
+}
+
 interface WhatsAppOtherMessage {
   id: string;
   from: string;
   timestamp: string;
-  type: Exclude<string, 'text'>;
+  type: Exclude<string, 'text' | 'audio' | 'image' | 'document'>;
 }
 
-type WhatsAppMessage = WhatsAppTextMessage | WhatsAppOtherMessage;
+type WhatsAppMessage =
+  | WhatsAppTextMessage
+  | WhatsAppAudioMessage
+  | WhatsAppImageMessage
+  | WhatsAppDocumentMessage
+  | WhatsAppOtherMessage;
 
 interface MetaWebhookPayload {
   object: string;
@@ -55,49 +85,81 @@ function isValidSignature(rawBody: string, signature: string): boolean {
   }
 }
 
+async function getOrCreateUser(phoneNumber: string) {
+  const existing = await prisma.user.findUnique({ where: { phone: phoneNumber } });
+  if (existing) return { user: existing, isNew: false };
+
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const user = await prisma.user.create({
+    data: {
+      email: `${phoneNumber}@whatsapp.temp`,
+      phone: phoneNumber,
+      trialEndsAt,
+      subscription: { create: { status: 'TRIAL' } },
+    },
+  });
+  return { user, isNew: true };
+}
+
 async function processIncomingMessage(
   phoneNumber: string,
-  messageText: string,
-  whatsappMessageId: string,
+  message: WhatsAppMessage,
 ): Promise<void> {
   try {
-    const user = await prisma.user.findUnique({
-      where: { phone: phoneNumber },
-    });
+    const { user, isNew } = await getOrCreateUser(phoneNumber);
 
-    if (!user) {
-      // Create a basic user record and send welcome message
-      const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      const newUser = await prisma.user.create({
-        data: {
-          email: `${phoneNumber}@whatsapp.temp`,
-          phone: phoneNumber,
-          trialEndsAt,
-          subscription: {
-            create: {
-              status: 'TRIAL',
-            },
-          },
-        },
-      });
-
-      void newUser; // used for creation side-effect
-
+    if (isNew) {
       await sendWhatsAppMessage(
         phoneNumber,
-        `Hola, soy *AXIS* — tu asistente personal de vida.\n\nEstoy aquí para ayudarte a vivir con dirección, enfoque y propósito — no solo a estar ocupado.\n\n¿Cómo te llamas y en qué puedo ayudarte hoy?`,
+        `Hola, soy *AXIS* — tu asistente personal de vida.\n\nEstoy aquí para ayudarte a vivir con dirección, enfoque y propósito — no solo a estar ocupado.\n\n¿Cómo te llamas?`,
       );
       return;
     }
 
-    // Import chat dynamically to avoid circular dependency issues
-    const { chat } = await import('@axis/ai');
-    const response = await chat(user.id, messageText);
+    const { chat, transcribeAudio } = await import('@axis/ai');
 
-    await sendWhatsAppMessage(phoneNumber, response);
+    if (message.type === 'text') {
+      const response = await chat(user.id, message.text.body);
+      await sendWhatsAppMessage(phoneNumber, response);
+      return;
+    }
+
+    if (message.type === 'audio') {
+      await sendWhatsAppMessage(phoneNumber, '🎙️ _Escuchando tu nota de voz..._');
+      const { buffer, mimeType } = await fetchWhatsAppMedia(message.audio.id);
+      const transcription = await transcribeAudio(buffer, mimeType);
+      console.log(`[whatsapp] Audio transcribed for ${phoneNumber}: "${transcription}"`);
+      const response = await chat(user.id, transcription);
+      await sendWhatsAppMessage(phoneNumber, response);
+      return;
+    }
+
+    if (message.type === 'image') {
+      await sendWhatsAppMessage(phoneNumber, '🖼️ _Analizando imagen..._');
+      const { buffer, mimeType } = await fetchWhatsAppMedia(message.image.id);
+      const imageBase64 = buffer.toString('base64');
+      const caption = message.image.caption ?? 'Analiza esta imagen y dime qué ves';
+      const response = await chat(user.id, caption, { imageBase64, imageMimeType: mimeType });
+      await sendWhatsAppMessage(phoneNumber, response);
+      return;
+    }
+
+    if (message.type === 'document') {
+      await sendWhatsAppMessage(
+        phoneNumber,
+        `📄 Recibí tu documento *${message.document.filename}*. Por ahora solo proceso texto e imágenes — pronto podré leer documentos también.`,
+      );
+      return;
+    }
+
+    // Any other type (sticker, location, etc.)
+    await sendWhatsAppMessage(
+      phoneNumber,
+      'Recibí tu mensaje, pero por ahora solo proceso texto, notas de voz e imágenes.',
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[whatsapp] processIncomingMessage error for ${phoneNumber}: ${message}`);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[whatsapp] processIncomingMessage error for ${phoneNumber}: ${errMsg}`);
   }
 }
 
@@ -172,28 +234,18 @@ const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
       return;
     }
 
-    const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-    request.log.info(`[whatsapp] message: ${JSON.stringify(message ?? null)}`);
+    const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0] as WhatsAppMessage | undefined;
+    request.log.info(`[whatsapp] message type: ${message?.type ?? 'none'}`);
 
     if (!message) {
       request.log.info('[whatsapp] No message field — status update or read receipt, skipping');
       return;
     }
 
-    if (message.type !== 'text') {
-      request.log.info(`[whatsapp] Ignoring non-text message type: ${message.type}`);
-      return;
-    }
-
-    const textMessage = message as WhatsAppTextMessage;
-    const phoneNumber = textMessage.from;
-    const messageText = textMessage.text.body;
-    const whatsappMessageId = textMessage.id;
-
-    request.log.info(`[whatsapp] Processing message from ${phoneNumber}: "${messageText}"`);
+    request.log.info(`[whatsapp] Processing ${message.type} message from ${message.from}`);
 
     // Keep function alive until processing completes (Vercel waitUntil)
-    waitUntil(processIncomingMessage(phoneNumber, messageText, whatsappMessageId));
+    waitUntil(processIncomingMessage(message.from, message));
   });
 };
 

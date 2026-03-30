@@ -9,7 +9,13 @@ import {
 } from './context.js';
 import { retrieveRelevantMemories, processAndSaveMemories } from './memory.js';
 
-export async function chat(userId: string, userMessage: string): Promise<string> {
+export interface ChatOptions {
+  /** Base64-encoded image to send alongside the message (GPT-4o vision) */
+  imageBase64?: string;
+  imageMimeType?: string;
+}
+
+export async function chat(userId: string, userMessage: string, options?: ChatOptions): Promise<string> {
   // 1. Load user with profile and life areas
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -97,16 +103,31 @@ export async function chat(userId: string, userMessage: string): Promise<string>
     },
   });
 
-  // 7. Build messages array for Claude (full history + new user message)
-  const claudeMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  // 7. Build messages array for OpenAI (full history + new user message)
+  type TextPart = { type: 'text'; text: string };
+  type ImagePart = { type: 'image_url'; image_url: { url: string } };
+  type MessageContent = string | Array<TextPart | ImagePart>;
+
+  const claudeMessages: Array<{ role: 'user' | 'assistant'; content: MessageContent }> = [];
 
   for (const m of lastMessages) {
     const normalizedRole = m.role === 'USER' || m.role === 'user' ? 'user' : 'assistant';
     claudeMessages.push({ role: normalizedRole, content: m.content });
   }
 
-  // Add the current user message
-  claudeMessages.push({ role: 'user', content: userMessage });
+  // Add the current user message (with optional image for GPT-4o vision)
+  if (options?.imageBase64 && options?.imageMimeType) {
+    const imageUrl = `data:${options.imageMimeType};base64,${options.imageBase64}`;
+    const contentParts: Array<TextPart | ImagePart> = [
+      { type: 'image_url', image_url: { url: imageUrl } },
+    ];
+    if (userMessage) {
+      contentParts.push({ type: 'text', text: userMessage });
+    }
+    claudeMessages.push({ role: 'user', content: contentParts });
+  } else {
+    claudeMessages.push({ role: 'user', content: userMessage });
+  }
 
   // 8. Call OpenAI
   let assistantText: string;
