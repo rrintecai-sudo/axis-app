@@ -151,8 +151,15 @@ const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
 
     // Validate HMAC signature
     const signature = request.headers['x-hub-signature-256'];
-    if (typeof signature !== 'string' || !isValidSignature(rawBody, signature)) {
-      request.log.warn('[whatsapp] Invalid x-hub-signature-256 — ignoring payload');
+    request.log.info(`[whatsapp] signature header: ${signature ?? 'MISSING'}`);
+    if (typeof signature !== 'string') {
+      request.log.warn('[whatsapp] No x-hub-signature-256 header — ignoring payload');
+      return;
+    }
+    const sigValid = isValidSignature(rawBody, signature);
+    request.log.info(`[whatsapp] HMAC valid: ${sigValid}`);
+    if (!sigValid) {
+      request.log.warn('[whatsapp] Invalid HMAC — ignoring payload');
       return;
     }
 
@@ -165,9 +172,10 @@ const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const message = payload.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    request.log.info(`[whatsapp] message: ${JSON.stringify(message ?? null)}`);
 
     if (!message) {
-      // Status updates, read receipts, etc. — nothing to process
+      request.log.info('[whatsapp] No message field — status update or read receipt, skipping');
       return;
     }
 
@@ -180,6 +188,8 @@ const whatsappRoutes: FastifyPluginAsync = async (fastify) => {
     const phoneNumber = textMessage.from;
     const messageText = textMessage.text.body;
     const whatsappMessageId = textMessage.id;
+
+    request.log.info(`[whatsapp] Processing message from ${phoneNumber}: "${messageText}"`);
 
     // Process in background — reply already sent
     void processIncomingMessage(phoneNumber, messageText, whatsappMessageId);
