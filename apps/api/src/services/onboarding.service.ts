@@ -143,6 +143,36 @@ async function saveAreas(userId: string, areas: LifeAreaInput[]): Promise<void> 
   });
 }
 
+async function saveAdditionalAreas(
+  profileId: string,
+  existingAreaNames: string[],
+  newAreas: LifeAreaInput[],
+): Promise<void> {
+  const dedupedNew = newAreas.filter((a) => !existingAreaNames.includes(a.name));
+  if (dedupedNew.length === 0) return;
+  const startPriority = existingAreaNames.length + 1;
+  await prisma.lifeArea.createMany({
+    data: dedupedNew.map((area, idx) => ({
+      profileId,
+      name: area.name,
+      isCustom: area.isCustom,
+      priority: startPriority + idx,
+      isActive: true,
+    })),
+  });
+}
+
+function isNegativeResponse(message: string): boolean {
+  const lower = message.toLowerCase().trim();
+  if (lower === 'no') return true;
+  const negativePatterns = [
+    'no,', 'no.', 'no hay', 'nada más', 'nada mas', 'eso es todo',
+    'solo esa', 'solo esa', 'ninguna más', 'ninguna mas', 'con eso',
+    'esas son', 'ya está', 'ya esta', 'suficiente', 'solo tengo',
+  ];
+  return negativePatterns.some((p) => lower.includes(p));
+}
+
 async function getProfile(userId: string): Promise<UserProfile & { lifeAreas: LifeArea[] }> {
   const profile = await prisma.userProfile.findUnique({
     where: { userId },
@@ -152,6 +182,18 @@ async function getProfile(userId: string): Promise<UserProfile & { lifeAreas: Li
   return profile;
 }
 
+function buildNeglectedAreaQuestion(areas: LifeArea[]): string {
+  const areaList = areas.map((a) => `• ${a.name}`).join('\n');
+  return `Ya tengo el contexto de tus ${areas.length} áreas. ✓
+
+Una última pregunta — y quiero que seas honesto contigo mismo:
+
+Tienes estas áreas activas:
+${areaList}
+
+¿Cuál de estas sientes que has estado descuidando más?`;
+}
+
 async function handleGoalCollection(user: User, message: string): Promise<string> {
   const profile = await getProfile(user.id);
   const areas = profile.lifeAreas;
@@ -159,14 +201,19 @@ async function handleGoalCollection(user: User, message: string): Promise<string
   // Encontrar el área actual (la primera sin goal90days)
   const currentArea = areas.find((a) => !a.goal90days);
 
-  if (!currentArea) {
-    // Todas las áreas tienen meta — avanzar al paso 4
+  const advanceToNeglectedOrTime = async (): Promise<string> => {
+    if (areas.length === 1) {
+      // Solo 1 área — no tiene sentido preguntar cuál descuida, saltar a step 5
+      await advanceStep(user.id, 5);
+      return `Ya tengo el contexto de tu área. ✓\n\n${TIME_QUESTION}`;
+    }
     await advanceStep(user.id, 4);
-    return `Ya tengo el contexto de tus ${areas.length} áreas. ✓
+    return buildNeglectedAreaQuestion(areas);
+  };
 
-Una última pregunta — y quiero que seas honesto contigo mismo:
-
-¿Cuál de estas áreas sientes que has estado descuidando más?`;
+  if (!currentArea) {
+    // Todas las áreas tienen meta — avanzar
+    return advanceToNeglectedOrTime();
   }
 
   // Guardar la meta en el área actual
@@ -179,13 +226,8 @@ Una última pregunta — y quiero que seas honesto contigo mismo:
   const nextArea = areas.find((a) => a.id !== currentArea.id && !a.goal90days);
 
   if (!nextArea) {
-    // Era la última — avanzar al paso 4
-    await advanceStep(user.id, 4);
-    return `Ya tengo el contexto de tus ${areas.length} áreas. ✓
-
-Una última pregunta — y quiero que seas honesto contigo mismo:
-
-¿Cuál de estas áreas sientes que has estado descuidando más?`;
+    // Era la última — avanzar
+    return advanceToNeglectedOrTime();
   }
 
   return `Claro. ✓
@@ -246,9 +288,46 @@ export async function handleOnboardingMessage(user: User, message: string): Prom
     }
 
     case 2: {
-      // Parsear áreas → pedir meta de la primera
+      // Verificar si ya hay áreas guardadas (segundo pase — esperando confirmación)
+      const existingProfile = await prisma.userProfile.findUnique({
+        where: { userId: user.id },
+        include: { lifeAreas: { orderBy: { priority: 'asc' } } },
+      });
+      const existingAreas = existingProfile?.lifeAreas ?? [];
+
+      if (existingAreas.length > 0) {
+        // Segundo pase: el usuario responde a "¿Hay más áreas?"
+        if (isNegativeResponse(message)) {
+          // Confirma que no hay más — avanzar con las áreas que ya tiene
+          await advanceStep(user.id, 3);
+          const firstArea = existingAreas[0]?.name ?? 'Trabajo/negocio';
+          return buildFirstGoalMessage(existingAreas.length, firstArea);
+        }
+        // Intentar parsear áreas adicionales del mensaje
+        const newAreas = await parseAreasWithAI(message);
+        if (newAreas.length > 0 && existingProfile) {
+          await saveAdditionalAreas(
+            existingProfile.id,
+            existingAreas.map((a) => a.name),
+            newAreas,
+          );
+        }
+        await advanceStep(user.id, 3);
+        const total = existingAreas.length + newAreas.length;
+        const firstArea = existingAreas[0]?.name ?? 'Trabajo/negocio';
+        return buildFirstGoalMessage(total, firstArea);
+      }
+
+      // Primer pase: parsear áreas de la respuesta inicial
       const areas = await parseAreasWithAI(message);
       await saveAreas(user.id, areas);
+
+      if (areas.length === 1) {
+        // Solo 1 área — preguntar si hay más antes de continuar
+        return `${areas[0]?.name ?? 'Esa área'}. ¿Hay alguna más que esté activa para ti ahora mismo?`;
+      }
+
+      // Múltiples áreas — avanzar directo
       await advanceStep(user.id, 3);
       const firstArea = areas[0]?.name ?? 'Trabajo/negocio';
       return buildFirstGoalMessage(areas.length, firstArea);
