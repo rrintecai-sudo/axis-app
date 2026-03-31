@@ -1,7 +1,7 @@
 import ScrollReveal from '@/components/ScrollReveal';
 
 const WA_NUMBER = '15551534745';
-const WA_LINK = `https://wa.me/${WA_NUMBER}`;
+const WA_LINK = `https://wa.me/${WA_NUMBER}?text=Hola%20AXIS`;
 
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" width={18} height={18} style={{ flexShrink: 0 }}>
