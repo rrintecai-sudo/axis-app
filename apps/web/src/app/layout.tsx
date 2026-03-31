@@ -1,9 +1,22 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { DM_Serif_Display, Plus_Jakarta_Sans } from 'next/font/google';
 import { SessionProvider } from 'next-auth/react';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+const dmSerif = DM_Serif_Display({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
+  display: 'swap',
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'AXIS — Tu socio de vida',
@@ -17,10 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark">
-      <body
-        className={`${inter.className} bg-[#0A0A0A] text-[#F5F5F5] antialiased`}
-      >
+    <html lang="es" className={`${dmSerif.variable} ${plusJakarta.variable}`}>
+      <body>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
