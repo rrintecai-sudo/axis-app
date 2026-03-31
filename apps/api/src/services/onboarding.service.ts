@@ -12,11 +12,18 @@ Soy tu socio de vida personal. Estoy aquí para acompañarte todos los días —
 
 Esto es lo que puedo hacer contigo:
 
-📋 *Guía del día* — Cada mañana te digo exactamente qué 3 cosas hacer hoy
+🗓 *Guía del día* — Cada mañana te digo exactamente qué 3 cosas hacer hoy
 💬 *Siempre disponible* — Escríbeme cuando estés saturado y no sepas por dónde empezar
 🧠 *Tu espacio para pensar* — Cuéntame lo que tienes en la cabeza, te ayudo a ordenarlo
 🌙 *Cierre del día* — Cada noche te hago una reflexión rápida de cómo estuvo
 👁 *Te cuido la espalda* — Noto cuando estás descuidando algo importante y te lo digo
+
+Y una cosa importante: puedes escribirme como quieras.
+✍️ Texto normal
+🎤 Nota de voz — te escucho y respondo en base a lo que dijiste
+📎 Imágenes o archivos — si me mandas una foto de tus notas, una captura, un documento, lo analizo y te ayudo a pensar con eso
+
+Todo lo que me compartas me ayuda a conocerte mejor y a darte una guía más precisa cada día.
 
 Para poder ayudarte bien, necesito conocerte un poco. ¿Cómo te llamas?`;
 
