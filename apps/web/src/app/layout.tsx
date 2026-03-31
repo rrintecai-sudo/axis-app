@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { DM_Serif_Display, Plus_Jakarta_Sans } from 'next/font/google';
-import { SessionProvider } from 'next-auth/react';
 import './globals.css';
 
 const dmSerif = DM_Serif_Display({
@@ -32,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${dmSerif.variable} ${plusJakarta.variable}`}>
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        {children}
       </body>
     </html>
   );
