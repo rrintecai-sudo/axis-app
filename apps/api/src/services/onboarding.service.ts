@@ -276,7 +276,33 @@ Siempre.`;
 export async function handleOnboardingMessage(user: User, message: string): Promise<string> {
   switch (user.onboardingStep) {
     case 0: {
-      // Primera vez — enviar bienvenida y avanzar a step 1
+      // Si ya tiene nombre desde el registro web, saltar directo a áreas (step 2)
+      if (user.name?.trim()) {
+        const firstName = user.name.trim().split(/\s+/)[0] ?? user.name.trim();
+        let profile = await prisma.userProfile.findUnique({ where: { userId: user.id } });
+        if (!profile) {
+          profile = await prisma.userProfile.create({ data: { userId: user.id, name: user.name } });
+        } else {
+          await prisma.userProfile.update({ where: { userId: user.id }, data: { name: user.name } });
+        }
+        await advanceStep(user.id, 2);
+        const welcomeKnown = `Hola, ${firstName}. Soy AXIS.
+
+Soy tu socio de vida personal. Estoy aquí para acompañarte todos los días — no solo para mandarte un mensaje en la mañana.
+
+Esto es lo que puedo hacer contigo:
+
+🗓 *Guía del día* — Cada mañana te digo exactamente qué 3 cosas hacer hoy
+💬 *Siempre disponible* — Escríbeme cuando estés saturado y no sepas por dónde empezar
+🧠 *Tu espacio para pensar* — Cuéntame lo que tienes en la cabeza, te ayudo a ordenarlo
+🌙 *Cierre del día* — Cada noche te hago una reflexión rápida de cómo estuvo
+
+Para ayudarte bien, necesito conocerte un poco.
+
+${buildAreasMessage(firstName)}`;
+        return welcomeKnown;
+      }
+      // Sin nombre — pedir nombre (flujo original)
       await advanceStep(user.id, 1);
       return WELCOME_MESSAGE;
     }
