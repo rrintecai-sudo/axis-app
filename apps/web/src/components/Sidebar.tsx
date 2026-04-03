@@ -101,7 +101,7 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div role="navigation" style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV.map(({ href, label, Icon }) => {
           const on = active(href);
           return (
@@ -128,7 +128,7 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
             </Link>
           );
         })}
-      </nav>
+      </div>
 
       {/* Usuario */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '14px 10px' }}>
