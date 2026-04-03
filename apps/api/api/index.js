@@ -58380,6 +58380,31 @@ Siempre.`;
 async function handleOnboardingMessage(user, message) {
   switch (user.onboardingStep) {
     case 0: {
+      if (user.name?.trim()) {
+        const firstName = user.name.trim().split(/\s+/)[0] ?? user.name.trim();
+        let profile = await import_db.prisma.userProfile.findUnique({ where: { userId: user.id } });
+        if (!profile) {
+          profile = await import_db.prisma.userProfile.create({ data: { userId: user.id, name: user.name } });
+        } else {
+          await import_db.prisma.userProfile.update({ where: { userId: user.id }, data: { name: user.name } });
+        }
+        await advanceStep(user.id, 2);
+        const welcomeKnown = `Hola, ${firstName}. Soy AXIS.
+
+Soy tu socio de vida personal. Estoy aqu\xED para acompa\xF1arte todos los d\xEDas \u2014 no solo para mandarte un mensaje en la ma\xF1ana.
+
+Esto es lo que puedo hacer contigo:
+
+\u{1F5D3} *Gu\xEDa del d\xEDa* \u2014 Cada ma\xF1ana te digo exactamente qu\xE9 3 cosas hacer hoy
+\u{1F4AC} *Siempre disponible* \u2014 Escr\xEDbeme cuando est\xE9s saturado y no sepas por d\xF3nde empezar
+\u{1F9E0} *Tu espacio para pensar* \u2014 Cu\xE9ntame lo que tienes en la cabeza, te ayudo a ordenarlo
+\u{1F319} *Cierre del d\xEDa* \u2014 Cada noche te hago una reflexi\xF3n r\xE1pida de c\xF3mo estuvo
+
+Para ayudarte bien, necesito conocerte un poco.
+
+${buildAreasMessage(firstName)}`;
+        return welcomeKnown;
+      }
       await advanceStep(user.id, 1);
       return WELCOME_MESSAGE;
     }
