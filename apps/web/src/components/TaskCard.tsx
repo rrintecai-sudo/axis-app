@@ -7,120 +7,76 @@ interface TaskCardProps {
   onStatusChange?: (id: string, status: TaskStatus) => void;
 }
 
-function priorityBadge(priority: number): {
-  label: string;
-  className: string;
-} {
-  if (priority >= 8) {
-    return {
-      label: `P${priority}`,
-      className:
-        'bg-red-500/15 text-red-400 border border-red-500/20',
-    };
-  }
-  if (priority >= 5) {
-    return {
-      label: `P${priority}`,
-      className:
-        'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20',
-    };
-  }
-  return {
-    label: `P${priority}`,
-    className:
-      'bg-zinc-700/40 text-zinc-400 border border-zinc-700/40',
-  };
+function priorityStyle(p: number): { bg: string; color: string; border: string; label: string } {
+  if (p >= 8) return { bg: 'rgba(239,68,68,0.1)', color: '#f87171', border: 'rgba(239,68,68,0.25)', label: 'Alta' };
+  if (p >= 5) return { bg: 'rgba(234,179,8,0.1)', color: '#facc15', border: 'rgba(234,179,8,0.25)', label: 'Media' };
+  return { bg: 'rgba(34,197,94,0.08)', color: '#4ade80', border: 'rgba(34,197,94,0.2)', label: 'Normal' };
 }
 
-function statusLabel(status: TaskStatus): string {
-  switch (status) {
-    case 'PENDING':
-      return 'Pendiente';
-    case 'IN_PROGRESS':
-      return 'En progreso';
-    case 'DONE':
-      return 'Hecho';
-  }
-}
-
-function statusClass(status: TaskStatus): string {
-  switch (status) {
-    case 'PENDING':
-      return 'bg-zinc-700/40 text-zinc-400 border border-zinc-700/40';
-    case 'IN_PROGRESS':
-      return 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20';
-    case 'DONE':
-      return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20';
+function statusStyle(s: TaskStatus): { bg: string; color: string; border: string; label: string } {
+  switch (s) {
+    case 'PENDING':    return { bg: 'rgba(113,113,122,0.12)', color: '#a1a1aa', border: 'rgba(113,113,122,0.25)', label: 'Pendiente' };
+    case 'IN_PROGRESS':return { bg: 'rgba(34,197,94,0.1)',   color: '#4ade80', border: 'rgba(34,197,94,0.25)',   label: 'En progreso' };
+    case 'DONE':       return { bg: 'rgba(34,197,94,0.08)',  color: '#22c55e', border: 'rgba(34,197,94,0.2)',    label: 'Completado' };
   }
 }
 
 export default function TaskCard({ task, onStatusChange }: TaskCardProps) {
-  const badge = priorityBadge(task.priority);
-  const isDone = task.status === 'DONE';
+  const pri = priorityStyle(task.priority);
+  const sta = statusStyle(task.status);
+  const done = task.status === 'DONE';
 
   return (
     <div
-      className={[
-        'relative rounded-lg bg-[#111111] border border-[#1F1F1F] p-4 transition-opacity',
-        task.isTopTask ? 'border-l-2 border-l-indigo-500' : '',
-        isDone ? 'opacity-60' : '',
-      ].join(' ')}
+      className="rounded-2xl p-4 flex flex-col gap-3 transition-all"
+      style={{
+        background: done ? 'rgba(6,15,9,0.6)' : 'linear-gradient(135deg,#0a1a0f,#071410)',
+        border: `1px solid ${task.isTopTask ? 'rgba(34,197,94,0.35)' : 'rgba(34,197,94,0.12)'}`,
+        opacity: done ? 0.55 : 1,
+        boxShadow: task.isTopTask ? '0 0 0 1px rgba(34,197,94,0.1), inset 0 1px 0 rgba(34,197,94,0.08)' : 'none',
+      }}
     >
-      {task.isTopTask && (
-        <span className="absolute top-3 right-3 text-xs font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-0.5">
-          Top tarea
-        </span>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {/* Title */}
-        <p
-          className={[
-            'text-sm font-medium text-[#F5F5F5] leading-snug pr-20',
-            isDone ? 'line-through text-[#71717A]' : '',
-          ].join(' ')}
-        >
+      <div className="flex items-start justify-between gap-3">
+        <p className={`text-sm font-medium leading-snug flex-1 ${done ? 'line-through' : ''}`}
+          style={{ color: done ? 'rgba(240,253,244,0.35)' : '#f0fdf4' }}>
           {task.title}
         </p>
-
-        {/* Badges row */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span
-            className={`text-xs font-medium rounded px-2 py-0.5 ${badge.className}`}
-          >
-            {badge.label}
+        {task.isTopTask && (
+          <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg whitespace-nowrap"
+            style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
+            ★ TOP
           </span>
-
-          <span className="text-xs rounded px-2 py-0.5 bg-zinc-800/60 text-zinc-400 border border-zinc-700/40">
-            {task.lifeArea}
-          </span>
-
-          <span
-            className={`text-xs rounded px-2 py-0.5 ${statusClass(task.status)}`}
-          >
-            {statusLabel(task.status)}
-          </span>
-        </div>
-
-        {/* AI Reason */}
-        {task.aiReason != null && task.aiReason !== '' && (
-          <p className="text-xs text-[#71717A] leading-relaxed mt-1">
-            {task.aiReason}
-          </p>
-        )}
-
-        {/* Action button */}
-        {onStatusChange != null && task.status !== 'DONE' && (
-          <div className="flex justify-end mt-1">
-            <button
-              onClick={() => onStatusChange(task.id, 'DONE')}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              Marcar como hecho ✓
-            </button>
-          </div>
         )}
       </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg"
+          style={{ background: pri.bg, color: pri.color, border: `1px solid ${pri.border}` }}>
+          {pri.label}
+        </span>
+        <span className="text-[11px] px-2 py-0.5 rounded-lg"
+          style={{ background: 'rgba(34,197,94,0.06)', color: 'rgba(134,239,172,0.6)', border: '1px solid rgba(34,197,94,0.12)' }}>
+          {task.lifeArea}
+        </span>
+        <span className="text-[11px] px-2 py-0.5 rounded-lg"
+          style={{ background: sta.bg, color: sta.color, border: `1px solid ${sta.border}` }}>
+          {sta.label}
+        </span>
+      </div>
+
+      {task.aiReason && (
+        <p className="text-xs leading-relaxed" style={{ color: 'rgba(134,239,172,0.4)' }}>{task.aiReason}</p>
+      )}
+
+      {onStatusChange && !done && (
+        <button
+          onClick={() => onStatusChange(task.id, 'DONE')}
+          className="self-end text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+          style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)' }}
+        >
+          Marcar como hecho ✓
+        </button>
+      )}
     </div>
   );
 }
