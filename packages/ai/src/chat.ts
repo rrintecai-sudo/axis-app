@@ -1,6 +1,10 @@
 import { prisma } from '@axis/db';
 import type { MessageRole } from '@axis/db';
-import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type {
+  ChatCompletionMessageParam,
+  ChatCompletionTool,
+  ChatCompletionMessageToolCall,
+} from 'openai/resources/chat/completions';
 import { openai, MODEL, MAX_TOKENS } from './client.js';
 import { AXIS_SYSTEM_PROMPT } from './prompts/system.js';
 import {
@@ -37,6 +41,77 @@ Recibe su guía del día a las: ${profile.wakeUpTime}
 - Si el usuario está saturado, prioriza basado en sus áreas y metas
 - Si detectas que está ignorando su área descuidada, nómbralo con respeto
 - Nunca preguntes cosas que ya sabes de este contexto`.trim();
+}
+
+// ---------------------------------------------------------------------------
+// Tools
+// ---------------------------------------------------------------------------
+
+const TOOLS: ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'save_task',
+      description:
+        'Guarda una tarea o recordatorio para el usuario. Úsala cuando el usuario mencione algo que tiene que hacer, un compromiso, o cuando pida que le recuerdes algo a una hora específica.',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: 'Título breve de la tarea o recordatorio',
+          },
+          description: {
+            type: 'string',
+            description: 'Detalle adicional (opcional)',
+          },
+          lifeArea: {
+            type: 'string',
+            description:
+              'Área de vida: Trabajo/negocio, Familia, Salud/energía, Fe/espiritualidad, Dinero/finanzas, Crecimiento personal, Matrimonio/pareja',
+          },
+          remindAt: {
+            type: 'string',
+            description:
+              'Fecha y hora exacta para enviar el recordatorio por WhatsApp, en formato ISO 8601 (ej: 2026-04-02T15:00:00Z). Úsalo cuando el usuario pida que le recuerdes algo a una hora específica.',
+          },
+          dueDate: {
+            type: 'string',
+            description: 'Fecha límite de la tarea en ISO 8601 (opcional)',
+          },
+        },
+        required: ['title'],
+      },
+    },
+  },
+];
+
+async function executeSaveTask(
+  userId: string,
+  args: {
+    title: string;
+    description?: string;
+    lifeArea?: string;
+    remindAt?: string;
+    dueDate?: string;
+  },
+): Promise<string> {
+  try {
+    await prisma.task.create({
+      data: {
+        userId,
+        title: args.title,
+        description: args.description ?? null,
+        lifeArea: args.lifeArea ?? null,
+        remindAt: args.remindAt ? new Date(args.remindAt) : null,
+        dueDate: args.dueDate ? new Date(args.dueDate) : null,
+      },
+    });
+    return 'ok';
+  } catch (err) {
+    console.error('[chat] save_task failed:', err);
+    return 'error';
+  }
 }
 
 export interface ChatOptions {
@@ -161,13 +236,15 @@ export async function chat(userId: string, userMessage: string, options?: ChatOp
     openaiMessages.push({ role: 'user', content: userMessage });
   }
 
-  // 8. Call OpenAI
+  // 8. Call OpenAI (with tools)
   let assistantText: string;
 
   try {
     const response = await openai.chat.completions.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
+      tools: TOOLS,
+      tool_choice: 'auto',
       messages: [
         { role: 'system', content: systemPrompt },
         ...openaiMessages,
@@ -175,11 +252,55 @@ export async function chat(userId: string, userMessage: string, options?: ChatOp
     });
 
     const choice = response.choices[0];
-    if (!choice?.message?.content) {
-      throw new Error('OpenAI returned no text content');
-    }
+    if (!choice) throw new Error('OpenAI returned no choice');
 
-    assistantText = choice.message.content;
+    // Handle tool calls — model wants to save a task
+    if (choice.finish_reason === 'tool_calls' && choice.message.tool_calls?.length) {
+      const toolCalls = choice.message.tool_calls as ChatCompletionMessageToolCall[];
+
+      // Execute all tool calls in parallel
+      const toolResults = await Promise.all(
+        toolCalls.map(async (tc) => {
+          if (tc.function.name === 'save_task') {
+            const args = JSON.parse(tc.function.arguments) as {
+              title: string;
+              description?: string;
+              lifeArea?: string;
+              remindAt?: string;
+              dueDate?: string;
+            };
+            const result = await executeSaveTask(userId, args);
+            return { toolCallId: tc.id, result };
+          }
+          return { toolCallId: tc.id, result: 'unknown tool' };
+        }),
+      );
+
+      // Continue conversation with tool results so the model can reply naturally
+      const messagesWithTools: ChatCompletionMessageParam[] = [
+        { role: 'system', content: systemPrompt },
+        ...openaiMessages,
+        choice.message,
+        ...toolResults.map(({ toolCallId, result }) => ({
+          role: 'tool' as const,
+          tool_call_id: toolCallId,
+          content: result,
+        })),
+      ];
+
+      const followUp = await openai.chat.completions.create({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        messages: messagesWithTools,
+      });
+
+      const followUpText = followUp.choices[0]?.message?.content;
+      if (!followUpText) throw new Error('OpenAI returned no text on follow-up');
+      assistantText = followUpText;
+    } else {
+      if (!choice.message?.content) throw new Error('OpenAI returned no text content');
+      assistantText = choice.message.content;
+    }
   } catch (err) {
     console.error('[chat] OpenAI API call failed:', err);
     throw err;

@@ -1,12 +1,10 @@
-import { auth } from '@/lib/auth';
+import { getAxisUser } from '@/lib/auth';
 import { getUserTasks } from '@/lib/api';
 import TasksClient from './TasksClient';
 
 export default async function TasksPage() {
-  const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? '';
-
-  const tasks = await getUserTasks(userId);
+  const user = await getAxisUser();
+  const tasks = await getUserTasks(user.id);
 
   return (
     <div className="flex flex-col gap-6">

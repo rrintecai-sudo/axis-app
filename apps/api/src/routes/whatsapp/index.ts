@@ -86,20 +86,13 @@ function isValidSignature(rawBody: string, signature: string): boolean {
   }
 }
 
-async function getOrCreateUser(phoneNumber: string) {
-  const existing = await prisma.user.findUnique({ where: { phone: phoneNumber } });
-  if (existing) return { user: existing, isNew: false };
+const REGISTER_URL = process.env['WEB_URL'] ?? 'https://axis-app.vercel.app';
+const NOT_REGISTERED_MSG =
+  `Para usar AXIS primero debes registrarte en ${REGISTER_URL}\n\nTarda menos de 2 minutos.`;
 
-  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const user = await prisma.user.create({
-    data: {
-      email: `${phoneNumber}@whatsapp.temp`,
-      phone: phoneNumber,
-      trialEndsAt,
-      subscription: { create: { status: 'TRIAL' } },
-    },
-  });
-  return { user, isNew: true };
+async function getRegisteredUser(phoneNumber: string) {
+  const user = await prisma.user.findUnique({ where: { phone: phoneNumber } });
+  return user ?? null;
 }
 
 async function processIncomingMessage(
@@ -107,7 +100,12 @@ async function processIncomingMessage(
   message: WhatsAppMessage,
 ): Promise<void> {
   try {
-    const { user, isNew } = await getOrCreateUser(phoneNumber);
+    const user = await getRegisteredUser(phoneNumber);
+
+    if (!user) {
+      await sendWhatsAppMessage(phoneNumber, NOT_REGISTERED_MSG);
+      return;
+    }
 
     const { chat, transcribeAudio } = await import('@axis/ai');
 

@@ -85,6 +85,50 @@ const cronRoutes: FastifyPluginAsync = async (fastify) => {
     }
   });
 
+  // POST /cron/reminders — se dispara cada hora
+  // Envía recordatorios de tareas cuyo remindAt cae en la ventana actual (±5 min)
+  fastify.post('/cron/reminders', async (_request, reply) => {
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - 5 * 60 * 1000);
+    const windowEnd   = new Date(now.getTime() + 5 * 60 * 1000);
+
+    try {
+      const tasks = await prisma.task.findMany({
+        where: {
+          remindAt:   { gte: windowStart, lte: windowEnd },
+          remindedAt: null,
+          status:     { in: ['PENDING', 'IN_PROGRESS'] },
+        },
+        include: { user: true },
+      });
+
+      const results: string[] = [];
+
+      for (const task of tasks) {
+        if (!task.user.phone) continue;
+
+        const message = `⏰ *Recordatorio:* ${task.title}${task.description ? `\n${task.description}` : ''}`;
+
+        try {
+          await sendWhatsAppMessage(task.user.phone, message);
+          await prisma.task.update({
+            where: { id: task.id },
+            data:  { remindedAt: new Date() },
+          });
+          results.push(`✓ Recordatorio enviado a ${task.user.phone}: "${task.title}"`);
+        } catch (err) {
+          fastify.log.error({ taskId: task.id, err }, 'Error sending reminder');
+          results.push(`✗ Error con tarea ${task.id}`);
+        }
+      }
+
+      return reply.code(200).send({ processed: results.length, results });
+    } catch (err) {
+      fastify.log.error(err, 'Cron reminders failed');
+      return reply.code(500).send({ error: 'Internal error' });
+    }
+  });
+
   // POST /cron/evening — se dispara cada hora
   // Envía el cierre nocturno a los usuarios cuyo sleepTime cae en esta hora
   fastify.post('/cron/evening', async (_request, reply) => {

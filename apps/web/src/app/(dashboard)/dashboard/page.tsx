@@ -1,5 +1,5 @@
-import { auth } from '@/lib/auth';
-import { getTodaysBrief, getTodaysTasks, getUserProfile } from '@/lib/api';
+import { getAxisUser } from '@/lib/auth';
+import { getTodaysBrief, getTodaysTasks } from '@/lib/api';
 import BriefCard from '@/components/BriefCard';
 import TaskCard from '@/components/TaskCard';
 import OnboardingBanner from '@/components/OnboardingBanner';
@@ -23,29 +23,27 @@ function greet(name?: string | null): string {
 }
 
 export default async function DashboardPage() {
-  const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? '';
+  const user = await getAxisUser();
 
-  const [brief, tasks, profile] = await Promise.all([
-    getTodaysBrief(userId),
-    getTodaysTasks(userId),
-    getUserProfile(userId),
+  const [brief, tasks] = await Promise.all([
+    getTodaysBrief(user.id),
+    getTodaysTasks(user.id),
   ]);
 
-  const profileComplete = profile?.isComplete === true;
+  const onboardingComplete = user.onboardingStep >= 6;
 
   return (
     <div className="flex flex-col gap-8">
       {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-[#F5F5F5]">
-          {greet(session?.user?.name)}
+          {greet(user.name)}
         </h1>
         <p className="text-sm text-[#71717A] capitalize">{todayLabel()}</p>
       </div>
 
       {/* Onboarding banner */}
-      {!profileComplete && <OnboardingBanner />}
+      {!onboardingComplete && <OnboardingBanner />}
 
       {/* Two-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -61,9 +59,7 @@ export default async function DashboardPage() {
               <p className="text-sm text-[#71717A] text-center">
                 No hay brief disponible para hoy.
                 <br />
-                <span className="text-xs">
-                  AXIS lo preparará vía WhatsApp.
-                </span>
+                <span className="text-xs">AXIS lo preparará vía WhatsApp.</span>
               </p>
             </div>
           )}

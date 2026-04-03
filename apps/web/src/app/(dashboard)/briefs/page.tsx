@@ -1,21 +1,17 @@
-import { auth } from '@/lib/auth';
+import { getAxisUser } from '@/lib/auth';
 import { getBriefs } from '@/lib/api';
 import BriefCard from '@/components/BriefCard';
 
 export default async function BriefsPage() {
-  const session = await auth();
-  const userId = (session?.user as { id?: string } | undefined)?.id ?? '';
+  const user = await getAxisUser();
+  const briefs = await getBriefs(user.id);
 
-  const briefs = await getBriefs(userId);
-
-  // Sort descending by date
   const sorted = [...briefs].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold text-[#F5F5F5]">Briefs</h1>
         <p className="text-sm text-[#71717A]">
@@ -23,14 +19,12 @@ export default async function BriefsPage() {
         </p>
       </div>
 
-      {/* Count */}
       {sorted.length > 0 && (
         <p className="text-xs text-[#71717A]">
           {sorted.length} brief{sorted.length !== 1 ? 's' : ''} en total
         </p>
       )}
 
-      {/* List */}
       {sorted.length > 0 ? (
         <div className="flex flex-col gap-4">
           {sorted.map((brief) => (

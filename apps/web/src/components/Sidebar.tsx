@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { useClerk } from '@clerk/nextjs';
 
 interface NavItem {
   icon: string;
@@ -34,6 +34,7 @@ function getInitials(name?: string | null): string {
 
 export default function Sidebar({ userName, userEmail }: SidebarProps) {
   const pathname = usePathname();
+  const { signOut } = useClerk();
 
   function isActive(href: string): boolean {
     return pathname === href || pathname.startsWith(`${href}/`);
@@ -70,18 +71,14 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
       {/* User section */}
       <div className="px-4 py-4 border-t border-[#1F1F1F]">
         <div className="flex items-center gap-3 mb-3">
-          {/* Avatar */}
           <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
             <span className="text-xs font-semibold text-indigo-300">
               {getInitials(userName)}
             </span>
           </div>
-
           <div className="flex-1 min-w-0">
             {userName != null && userName !== '' && (
-              <p className="text-xs font-medium text-[#F5F5F5] truncate">
-                {userName}
-              </p>
+              <p className="text-xs font-medium text-[#F5F5F5] truncate">{userName}</p>
             )}
             {userEmail != null && userEmail !== '' && (
               <p className="text-xs text-[#71717A] truncate">{userEmail}</p>
@@ -90,7 +87,7 @@ export default function Sidebar({ userName, userEmail }: SidebarProps) {
         </div>
 
         <button
-          onClick={() => void signOut({ callbackUrl: '/login' })}
+          onClick={() => void signOut({ redirectUrl: '/sign-in' })}
           className="w-full text-left text-xs text-[#71717A] hover:text-red-400 transition-colors px-1 py-1"
         >
           Cerrar sesión

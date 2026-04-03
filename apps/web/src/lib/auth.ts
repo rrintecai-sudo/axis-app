@@ -1,33 +1,25 @@
-import NextAuth, { type NextAuthConfig } from 'next-auth';
-import Google from 'next-auth/providers/google';
+import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@axis/db';
+import { redirect } from 'next/navigation';
+import type { User } from '@axis/db';
 
-const config: NextAuthConfig = {
-  providers: [
-    Google({
-      clientId: process.env['GOOGLE_CLIENT_ID']!,
-      clientSecret: process.env['GOOGLE_CLIENT_SECRET']!,
-    }),
-  ],
-  pages: {
-    signIn: '/login',
-  },
-  callbacks: {
-    jwt({ token, user }) {
-      if (user?.id != null) {
-        token['userId'] = user.id;
-      }
-      return token;
-    },
-    session({ session, token }) {
-      if (
-        typeof token['userId'] === 'string' &&
-        session.user != null
-      ) {
-        (session.user as { id?: string }).id = token['userId'];
-      }
-      return session;
-    },
-  },
-};
+/**
+ * Returns the AXIS User for the currently authenticated Clerk session.
+ * Redirects to /sign-in if not authenticated, or to /onboarding if the
+ * user hasn't completed web registration (no clerkId in DB yet).
+ */
+export async function getAxisUser(): Promise<User> {
+  const { userId: clerkId } = await auth();
 
-export const { handlers, auth, signIn, signOut } = NextAuth(config);
+  if (!clerkId) {
+    redirect('/sign-in');
+  }
+
+  const user = await prisma.user.findUnique({ where: { clerkId } });
+
+  if (!user) {
+    redirect('/onboarding');
+  }
+
+  return user;
+}

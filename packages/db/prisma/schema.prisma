@@ -13,6 +13,7 @@ datasource db {
 model User {
   id                 String             @id @default(cuid())
   email              String             @unique
+  clerkId            String?            @unique
   name               String?
   phone              String?            @unique
   timezone           String             @default("America/New_York")
@@ -78,6 +79,8 @@ model Task {
   status       TaskStatus @default(PENDING)
   aiReason     String?
   isTopTask    Boolean    @default(false)
+  remindAt     DateTime?
+  remindedAt   DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   completedAt  DateTime?
