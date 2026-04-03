@@ -14,7 +14,6 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
   const { signOut } = useClerk();
   const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
-  // Icon components defined inside to avoid module-scope issues
   const IcoHome = () => (
     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
       <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/>
@@ -56,14 +55,16 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
 
   return (
     <aside style={{
-      position: 'fixed',
-      inset: '0 auto 0 0',
       width: 220,
+      flexShrink: 0,
+      height: '100vh',
+      position: 'sticky',
+      top: 0,
       display: 'flex',
       flexDirection: 'column',
-      zIndex: 20,
       background: '#141417',
       borderRight: '1px solid rgba(255,255,255,0.05)',
+      zIndex: 20,
     }}>
 
       {/* Logo */}
@@ -118,7 +119,6 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
                 color: on ? '#000000' : 'rgba(255,255,255,0.5)',
                 background: on ? '#22c55e' : 'transparent',
                 textDecoration: 'none',
-                transition: 'all .15s',
               }}
             >
               <span style={{ color: on ? '#000000' : 'rgba(255,255,255,0.5)', display: 'flex' }}>
@@ -132,7 +132,6 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
 
       {/* Usuario */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '14px 10px' }}>
-        {/* Info usuario */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px 12px' }}>
           <div style={{
             width: 34,
@@ -177,7 +176,6 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
           </div>
         </div>
 
-        {/* Botón cerrar sesión */}
         <button
           onClick={() => void signOut({ redirectUrl: '/sign-in' })}
           style={{
@@ -194,7 +192,6 @@ export default function Sidebar({ userName, userEmail }: { userName?: string | n
             color: '#fca5a5',
             background: 'rgba(239,68,68,0.12)',
             border: '1px solid rgba(239,68,68,0.25)',
-            transition: 'background .15s',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.2)'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.12)'; }}
