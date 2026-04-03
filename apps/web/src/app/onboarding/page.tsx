@@ -14,7 +14,7 @@ const GREEN_BORDER = 'rgba(34,197,94,0.2)';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [phone, setPhone] = useState<PhoneValue>('');
+  const [phone, setPhone] = useState<PhoneValue | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -23,7 +23,7 @@ export default function OnboardingPage() {
     e.preventDefault();
     setError(null);
 
-    if (!phone || !isValidPhoneNumber(phone)) {
+    if (!phone || !isValidPhoneNumber(String(phone))) {
       setError('Ingresa un número de teléfono válido.');
       return;
     }
@@ -153,7 +153,7 @@ export default function OnboardingPage() {
           padding: '2rem',
         }}>
           {done ? (
-            <SuccessState phone={phone ?? ''} axisPhone={AXIS_PHONE} onDashboard={() => router.push('/dashboard')} />
+            <SuccessState phone={String(phone ?? '')} axisPhone={AXIS_PHONE} onDashboard={() => router.push('/dashboard')} />
           ) : (
             <FormState
               phone={phone}
@@ -192,13 +192,13 @@ function Step({ n, label, done, active }: { n: number; label: string; done?: boo
 function FormState({
   phone, setPhone, isLoading, error, onSubmit,
 }: {
-  phone: PhoneValue;
-  setPhone: (v: PhoneValue) => void;
+  phone: PhoneValue | undefined;
+  setPhone: (v: PhoneValue | undefined) => void;
   isLoading: boolean;
   error: string | null;
   onSubmit: (e: React.FormEvent) => void;
 }) {
-  const canSubmit = !!phone && isValidPhoneNumber(phone ?? '');
+  const canSubmit = !!phone && isValidPhoneNumber(String(phone));
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
