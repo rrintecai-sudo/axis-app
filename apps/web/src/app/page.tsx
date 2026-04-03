@@ -1,7 +1,5 @@
 import ScrollReveal from '@/components/ScrollReveal';
-
-const WA_NUMBER = '15551534745';
-const WA_LINK = `https://wa.me/${WA_NUMBER}?text=Hola%20AXIS`;
+import Link from 'next/link';
 
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" width={18} height={18} style={{ flexShrink: 0 }}>
@@ -16,7 +14,7 @@ export default function HomePage() {
       {/* NAV */}
       <nav>
         <div className="logo">AXIS</div>
-        <div className="nav-pill">Beta privada · Solo invitados</div>
+        <div className="nav-pill">Beta privada</div>
       </nav>
 
       {/* HERO */}
@@ -46,21 +44,12 @@ export default function HomePage() {
         </div>
 
         <div className="ctas">
-          <a href={WA_LINK} className="cta" target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon />
-            Comenzar en WhatsApp
-          </a>
-          <span className="cta-note">Gratis durante la beta · Solo para invitados</span>
+          <Link href="/sign-up" className="cta">
+            Crear mi cuenta gratis
+          </Link>
+          <span className="cta-note">Registro en 2 minutos · El acompañamiento ocurre por WhatsApp</span>
         </div>
       </section>
-
-      {/* BANNER */}
-      <div className="banner">
-        <p>
-          Estás viendo la <strong>beta privada de AXIS</strong>. Esta versión funciona 100% por
-          WhatsApp. El dashboard web llega en la próxima versión.
-        </p>
-      </div>
 
       {/* EL PROBLEMA */}
       <div className="sec">
@@ -185,44 +174,46 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ONBOARDING */}
+      {/* CÓMO FUNCIONA */}
       <div className="sec">
         <div className="lbl r">El proceso</div>
         <h2 className="ttl r">
-          Antes de ayudarte,
+          Tres pasos para
           <br />
-          <i>te conoce.</i>
+          <i>empezar.</i>
         </h2>
-        <p className="prose r">
-          La primera vez que escribes, AXIS pasa 5 minutos conociéndote. No es un formulario — es
-          una conversación.
-        </p>
         <div className="ob r">
           {[
             {
               n: '1',
-              lbl: 'Bienvenida',
-              txt: <span>AXIS se presenta y te explica exactamente qué puede hacer por ti. Sin rodeos. Sin promesas vacías.</span>,
+              lbl: 'Crea tu cuenta',
+              txt: (
+                <span>
+                  Registro rápido con Google o email. En el dashboard web agregas tu número de
+                  WhatsApp para activar la conexión con AXIS.
+                </span>
+              ),
             },
             {
               n: '2',
-              lbl: 'Áreas de vida',
-              txt: <span>AXIS te muestra las áreas más comunes — <strong>fe, matrimonio, familia, trabajo, dinero, salud, crecimiento</strong> — y tú dices cuáles son activas. Puedes agregar las tuyas.</span>,
+              lbl: 'AXIS te conoce por WhatsApp',
+              txt: (
+                <span>
+                  Escríbele tu primer mensaje. AXIS pasa unos minutos conociéndote —{' '}
+                  <strong>áreas de vida, metas de 90 días, tu hora del día.</strong> No es un
+                  formulario. Es una conversación.
+                </span>
+              ),
             },
             {
               n: '3',
-              lbl: 'Una meta por área',
-              txt: <span>Para cada área, AXIS te pide <strong>una sola cosa</strong> que necesita avanzar en los próximos 90 días. Esto guía todas las recomendaciones.</span>,
-            },
-            {
-              n: '4',
-              lbl: 'La pregunta honesta',
-              txt: <span>AXIS te pregunta qué área has estado descuidando más. <strong>Esta respuesta importa.</strong> No te dejará ignorarla.</span>,
-            },
-            {
-              n: '5',
-              lbl: 'Tu hora',
-              txt: <span>¿A qué hora quieres recibir tu guía del día? Eso es todo. AXIS tiene lo que necesita para empezar.</span>,
+              lbl: 'Tu dashboard se llena solo',
+              txt: (
+                <span>
+                  Todo lo que capturas por WhatsApp aparece en tu dashboard. Tareas, reflexiones,
+                  briefs. <strong>WhatsApp es el canal. El dashboard es tu centro de mando.</strong>
+                </span>
+              ),
             },
           ].map((row) => (
             <div className="ob-row" key={row.n}>
@@ -246,19 +237,20 @@ export default function HomePage() {
             <i>deliberadamente simple.</i>
           </h2>
           <p className="prose r" style={{ marginBottom: 0 }}>
-            Lo que tienes hoy es el núcleo — la conversación. Todo lo demás viene después.
+            Lo que tienes hoy es el núcleo — la conversación y tu dashboard personal.
           </p>
           <div className="scope-cols r">
             <div className="scol y-col">
               <div className="scol-h y">Disponible hoy</div>
               <ul className="slist">
                 {[
+                  'Registro web con Google o email',
+                  'Dashboard personal con tus tareas y briefs',
                   'Onboarding completo por WhatsApp',
                   'Guía del día personalizada cada mañana',
                   'Conversación libre durante el día',
                   'Cierre nocturno con reflexión',
                   'Recordatorios de compromisos importantes',
-                  'Detección de áreas descuidadas',
                   'Memoria de conversaciones anteriores',
                 ].map((item) => (
                   <li key={item}>{item}</li>
@@ -269,12 +261,11 @@ export default function HomePage() {
               <div className="scol-h n">Próxima versión</div>
               <ul className="slist">
                 {[
-                  'Dashboard web para ver tu vida completa',
-                  'Historial de guías y reflexiones',
                   'Análisis semanal automático',
                   'Modo verdad — feedback sin filtros',
                   'Integración con Google Calendar',
                   'Métricas de progreso por área',
+                  'Historial completo de conversaciones en web',
                   'App móvil nativa',
                 ].map((item) => (
                   <li key={item}>{item}</li>
@@ -294,21 +285,20 @@ export default function HomePage() {
           <i>probarlo?</i>
         </h2>
         <p className="final-sub r">
-          Beta privada. Solo invitados. Tu feedback va a dar forma al producto final.
+          Beta privada. Gratis durante la beta. Tu feedback va a dar forma al producto final.
         </p>
         <div className="ctas r">
-          <a href={WA_LINK} className="cta" target="_blank" rel="noopener noreferrer">
-            <WhatsAppIcon />
-            Comenzar en WhatsApp
-          </a>
-          <span className="cta-note">Abre WhatsApp directamente · Gratis durante la beta</span>
+          <Link href="/sign-up" className="cta">
+            Crear mi cuenta gratis
+          </Link>
+          <span className="cta-note">Registro en 2 minutos · Acompañamiento por WhatsApp</span>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer>
         <div className="f-logo">AXIS</div>
-        <div className="f-note">Beta privada · Solo invitados · 2025</div>
+        <div className="f-note">Beta privada · 2025</div>
       </footer>
     </ScrollReveal>
   );
