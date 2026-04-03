@@ -44,7 +44,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      setDone(true);
+      router.push('/dashboard');
     } catch {
       setError('No se pudo conectar. Verifica tu conexión.');
     } finally {

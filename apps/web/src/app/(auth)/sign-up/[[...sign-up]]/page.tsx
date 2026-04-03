@@ -44,6 +44,7 @@ export default function SignUpPage() {
       {/* Right panel — clerk */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
         <SignUp
+          forceRedirectUrl="/dashboard"
           appearance={{
             variables: {
               colorBackground: '#0a1a0f',

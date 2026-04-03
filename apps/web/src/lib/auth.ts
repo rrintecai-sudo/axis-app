@@ -1,12 +1,12 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@axis/db';
 import { redirect } from 'next/navigation';
 import type { User } from '@axis/db';
 
 /**
  * Returns the AXIS User for the currently authenticated Clerk session.
- * Redirects to /sign-in if not authenticated, or to /onboarding if the
- * user hasn't completed web registration (no clerkId in DB yet).
+ * Redirects to /sign-in if not authenticated.
+ * Auto-creates the user in DB on first access (no forced onboarding redirect).
  */
 export async function getAxisUser(): Promise<User> {
   const { userId: clerkId } = await auth();
@@ -15,11 +15,24 @@ export async function getAxisUser(): Promise<User> {
     redirect('/sign-in');
   }
 
-  const user = await prisma.user.findUnique({ where: { clerkId } });
+  const existing = await prisma.user.findUnique({ where: { clerkId } });
+  if (existing) return existing;
 
-  if (!user) {
-    redirect('/onboarding');
-  }
+  // First access after Clerk sign-up — auto-create user in DB
+  const clerkUser = await currentUser();
+  const email = clerkUser?.emailAddresses[0]?.emailAddress ?? `${clerkId}@clerk.temp`;
+  const name = clerkUser?.fullName ?? clerkUser?.firstName ?? null;
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  const user = await prisma.user.create({
+    data: {
+      clerkId,
+      email,
+      name,
+      trialEndsAt,
+      subscription: { create: { status: 'TRIAL' } },
+    },
+  });
 
   return user;
 }

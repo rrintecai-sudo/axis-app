@@ -38,15 +38,13 @@ const EmptyCard = ({ text }: { text: string }) => (
 export default async function DashboardPage() {
   const user = await getAxisUser();
   const [brief, tasks] = await Promise.all([getTodaysBrief(user.id), getTodaysTasks(user.id)]);
-  const onboardingComplete = user.onboardingStep >= 6;
-
   const pendingCount = tasks.filter(t => t.status !== 'DONE').length;
   const doneCount = tasks.filter(t => t.status === 'DONE').length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-      {!onboardingComplete && <OnboardingBanner />}
+      {!user.phone && <OnboardingBanner />}
 
       {/* ── HERO BANNER (full width) ── */}
       <div style={{

@@ -2,19 +2,42 @@ import Link from 'next/link';
 
 export default function OnboardingBanner() {
   return (
-    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-5 py-4 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <span className="text-amber-400 text-lg shrink-0">⚠</span>
-        <p className="text-sm text-amber-200">
-          Completa tu perfil para que AXIS te conozca mejor y pueda
-          preparar briefs personalizados.
-        </p>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 16,
+      padding: '14px 20px',
+      borderRadius: 12,
+      background: 'rgba(34,197,94,0.07)',
+      border: '1px solid rgba(34,197,94,0.25)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 18, flexShrink: 0 }}>📱</span>
+        <div>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: '#f0fdf4' }}>
+            Conecta tu WhatsApp para activar AXIS
+          </p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'rgba(240,253,244,0.45)' }}>
+            Sin tu número, AXIS no puede enviarte la guía del día ni reconocerte cuando le escribas.
+          </p>
+        </div>
       </div>
       <Link
-        href="/settings"
-        className="shrink-0 text-sm font-semibold text-amber-400 hover:text-amber-300 transition-colors whitespace-nowrap"
+        href="/onboarding"
+        style={{
+          flexShrink: 0,
+          padding: '8px 18px',
+          borderRadius: 8,
+          background: '#22c55e',
+          color: '#000',
+          fontSize: 13,
+          fontWeight: 700,
+          textDecoration: 'none',
+          whiteSpace: 'nowrap',
+        }}
       >
-        Ir a Configuración →
+        Conectar →
       </Link>
     </div>
   );
