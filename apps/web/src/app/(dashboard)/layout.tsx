@@ -9,13 +9,13 @@ export default async function DashboardLayout({
   const user = await getAxisUser();
 
   return (
-    <div className="min-h-screen" style={{ background: '#060f09' }}>
+    <div className="min-h-screen" style={{ background: '#09090b' }}>
       <Sidebar
         userName={user.name ?? null}
         userEmail={user.email}
       />
-      <main className="ml-56 min-h-screen">
-        <div className="max-w-5xl mx-auto px-8 py-10">{children}</div>
+      <main style={{ marginLeft: 240, minHeight: '100vh' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 36px' }}>{children}</div>
       </main>
     </div>
   );

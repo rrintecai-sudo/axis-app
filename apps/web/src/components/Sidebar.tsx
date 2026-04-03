@@ -4,151 +4,118 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
 
-const NAV = [
-  {
-    href: '/dashboard',
-    label: 'Inicio',
-    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-  },
-  {
-    href: '/tasks',
-    label: 'Tareas',
-    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
-  },
-  {
-    href: '/briefs',
-    label: 'Briefs',
-    icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z',
-  },
-  {
-    href: '/settings',
-    label: 'Ajustes',
-    icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
-  },
-];
+/* ── Íconos como componentes reales ── */
+const IcoHome = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
+const IcoTask = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M3 15h18M3 19h18M13 7h8"/></svg>;
+const IcoBrief = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>;
+const IcoGear = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>;
+const IcoLogout = () => <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
 
-function Icon({ d }: { d: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="shrink-0"
-      width="18"
-      height="18"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      {d.split(' M').map((segment, i) => (
-        <path key={i} d={i === 0 ? segment : `M${segment}`} />
-      ))}
-    </svg>
-  );
-}
+const NAV = [
+  { href: '/dashboard', label: 'Inicio',        Icon: IcoHome  },
+  { href: '/tasks',     label: 'Tareas',         Icon: IcoTask  },
+  { href: '/briefs',    label: 'Briefs',          Icon: IcoBrief },
+  { href: '/settings',  label: 'Configuración',  Icon: IcoGear  },
+];
 
 function initials(name?: string | null) {
   if (!name?.trim()) return '?';
-  return name.trim().split(' ').slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('');
+  return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('');
 }
 
 export default function Sidebar({ userName, userEmail }: { userName?: string | null; userEmail?: string | null }) {
   const pathname = usePathname();
   const { signOut } = useClerk();
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const active = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <aside
-      className="fixed inset-y-0 left-0 w-56 flex flex-col z-20"
-      style={{
-        background: '#0e0e10',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
+    <aside style={{
+      position: 'fixed', inset: '0 auto 0 0', width: 240,
+      display: 'flex', flexDirection: 'column', zIndex: 20,
+      background: '#111113',
+      borderRight: '1px solid rgba(255,255,255,0.07)',
+    }}>
+
       {/* ── Logo ── */}
-      <div className="h-14 flex items-center px-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-6 h-6 rounded flex items-center justify-center text-[11px] font-black"
-            style={{ background: '#22c55e', color: '#000' }}
-          >
-            A
-          </div>
-          <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '0.9rem', letterSpacing: '0.12em' }}>
-            AXIS
-          </span>
+      <div style={{ padding: '22px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 8, background: '#22c55e',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 900, fontSize: 13, color: '#000', letterSpacing: 1,
+          }}>A</div>
+          <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '0.14em', color: '#f1f5f9' }}>AXIS</span>
+          <span style={{
+            marginLeft: 'auto', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+            padding: '2px 7px', borderRadius: 20,
+            background: 'rgba(34,197,94,0.12)', color: '#4ade80',
+            border: '1px solid rgba(34,197,94,0.2)',
+          }}>BETA</span>
         </div>
-        <span
-          className="ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-          style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)' }}
-        >
-          BETA
-        </span>
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 flex flex-col gap-0.5 px-2 py-3">
-        <p className="px-3 pb-2 text-[10px] font-semibold tracking-widest uppercase" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          Menú
-        </p>
-        {NAV.map(item => {
-          const active = isActive(item.href);
+      <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {NAV.map(({ href, label, Icon }) => {
+          const on = active(href);
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg text-[13.5px] font-medium transition-all"
-              style={{
-                background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-                color: active ? '#f8fafc' : 'rgba(255,255,255,0.38)',
-              }}
-            >
-              <span style={{ color: active ? '#22c55e' : 'rgba(255,255,255,0.3)' }}>
-                <Icon d={item.icon} />
+            <Link key={href} href={href} style={{
+              display: 'flex', alignItems: 'center', gap: 11,
+              padding: '9px 12px', borderRadius: 8,
+              fontSize: 13.5, fontWeight: on ? 600 : 400,
+              color: on ? '#f1f5f9' : 'rgba(255,255,255,0.4)',
+              background: on ? 'rgba(255,255,255,0.07)' : 'transparent',
+              textDecoration: 'none',
+              borderLeft: on ? '2px solid #22c55e' : '2px solid transparent',
+              transition: 'all .15s',
+            }}>
+              <span style={{ color: on ? '#22c55e' : 'rgba(255,255,255,0.28)', display: 'flex' }}>
+                <Icon />
               </span>
-              {item.label}
+              {label}
             </Link>
           );
         })}
       </nav>
 
-      {/* ── Bottom ── */}
-      <div className="px-3 py-3 flex flex-col gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        {/* User row */}
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold"
-            style={{ background: 'rgba(34,197,94,0.2)', color: '#4ade80' }}
-          >
+      {/* ── Usuario ── */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '14px 10px 14px' }}>
+        {/* Info usuario */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px 12px' }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+            background: 'rgba(34,197,94,0.18)', border: '1.5px solid rgba(34,197,94,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700, color: '#4ade80',
+          }}>
             {initials(userName)}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-semibold truncate" style={{ color: '#e2e8f0' }}>
-              {userName ?? 'Usuario'}
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 12.5, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {userName ?? 'Mi cuenta'}
             </p>
             {userEmail && (
-              <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.28)' }}>
+              <p style={{ margin: 0, fontSize: 10.5, color: 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {userEmail}
               </p>
             )}
           </div>
         </div>
 
-        {/* Sign out */}
+        {/* Botón cerrar sesión */}
         <button
           onClick={() => void signOut({ redirectUrl: '/sign-in' })}
-          className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[13px] font-semibold transition-all"
           style={{
-            background: 'rgba(239,68,68,0.1)',
-            border: '1px solid rgba(239,68,68,0.22)',
-            color: '#f87171',
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '9px 0', borderRadius: 8, cursor: 'pointer',
+            fontSize: 13, fontWeight: 600, color: '#fca5a5',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+            transition: 'background .15s',
           }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.18)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; }}
         >
-          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Cerrar sesión
+          <IcoLogout /> Cerrar sesión
         </button>
       </div>
     </aside>
