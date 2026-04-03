@@ -1,6 +1,4 @@
 {
-  "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter=@axis/db generate && pnpm --filter=@axis/db build && pnpm --filter=@axis/api build",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/index" }
   ]
