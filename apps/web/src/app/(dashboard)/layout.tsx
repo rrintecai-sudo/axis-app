@@ -9,7 +9,7 @@ export default async function DashboardLayout({
   const user = await getAxisUser();
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A]">
+    <div className="min-h-screen" style={{ background: '#060f09' }}>
       <Sidebar
         userName={user.name ?? null}
         userEmail={user.email}

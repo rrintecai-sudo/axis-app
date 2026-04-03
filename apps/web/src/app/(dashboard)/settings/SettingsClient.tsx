@@ -44,7 +44,7 @@ interface SettingsClientProps {
 }
 
 function inputClass(extra = '') {
-  return `w-full rounded-lg bg-[#0A0A0A] border border-[#1F1F1F] px-4 py-2.5 text-sm text-[#F5F5F5] outline-none focus:border-indigo-500/60 transition-colors placeholder:text-[#71717A] ${extra}`;
+  return `w-full rounded-lg bg-[#060f09] border border-[rgba(34,197,94,0.12)] px-4 py-2.5 text-sm text-[#f0fdf4] outline-none focus:border-[rgba(34,197,94,0.5)] transition-colors placeholder:text-[rgba(134,239,172,0.3)] ${extra}`;
 }
 
 export default function SettingsClient({
@@ -141,14 +141,14 @@ export default function SettingsClient({
   return (
     <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-8">
       {/* Personal info */}
-      <section className="rounded-xl bg-[#111111] border border-[#1F1F1F] p-6 flex flex-col gap-5">
-        <h2 className="text-sm font-semibold text-[#F5F5F5]">
+      <section className="rounded-xl p-6 flex flex-col gap-5" style={{ background: '#0a1a0f', border: '1px solid rgba(34,197,94,0.12)' }}>
+        <h2 className="text-sm font-semibold" style={{ color: '#f0fdf4' }}>
           Información personal
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[#71717A]">Nombre</label>
+            <label className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>Nombre</label>
             <input
               type="text"
               value={name}
@@ -159,7 +159,7 @@ export default function SettingsClient({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[#71717A]">Email</label>
+            <label className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>Email</label>
             <input
               type="email"
               value={userEmail ?? ''}
@@ -170,7 +170,7 @@ export default function SettingsClient({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-[#71717A]">Zona horaria</label>
+          <label className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>Zona horaria</label>
           <select
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
@@ -186,7 +186,7 @@ export default function SettingsClient({
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[#71717A]">
+            <label className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>
               Hora del brief (despertar)
             </label>
             <input
@@ -198,7 +198,7 @@ export default function SettingsClient({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-[#71717A]">
+            <label className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>
               Hora de cierre (dormir)
             </label>
             <input
@@ -212,14 +212,11 @@ export default function SettingsClient({
       </section>
 
       {/* Roles */}
-      <section className="rounded-xl bg-[#111111] border border-[#1F1F1F] p-6 flex flex-col gap-4">
+      <section className="rounded-xl p-6 flex flex-col gap-4" style={{ background: '#0a1a0f', border: '1px solid rgba(34,197,94,0.12)' }}>
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-[#F5F5F5]">
-            Tus roles
-          </h2>
-          <p className="text-xs text-[#71717A]">
-            Selecciona todos los que apliquen. AXIS contextualizará sus
-            recomendaciones.
+          <h2 className="text-sm font-semibold" style={{ color: '#f0fdf4' }}>Tus roles</h2>
+          <p className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>
+            Selecciona todos los que apliquen. AXIS contextualizará sus recomendaciones.
           </p>
         </div>
 
@@ -231,12 +228,12 @@ export default function SettingsClient({
                 key={role.value}
                 type="button"
                 onClick={() => toggleRole(role.value)}
-                className={[
-                  'px-4 py-2 rounded-lg text-sm font-medium border transition-colors',
-                  active
-                    ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300'
-                    : 'bg-transparent border-[#1F1F1F] text-[#71717A] hover:text-[#F5F5F5] hover:border-[#2A2A2A]',
-                ].join(' ')}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                style={{
+                  background: active ? 'rgba(34,197,94,0.12)' : 'transparent',
+                  border: `1px solid ${active ? 'rgba(34,197,94,0.4)' : 'rgba(34,197,94,0.1)'}`,
+                  color: active ? '#4ade80' : 'rgba(134,239,172,0.45)',
+                }}
               >
                 {role.label}
               </button>
@@ -246,12 +243,10 @@ export default function SettingsClient({
       </section>
 
       {/* Life areas */}
-      <section className="rounded-xl bg-[#111111] border border-[#1F1F1F] p-6 flex flex-col gap-4">
+      <section className="rounded-xl p-6 flex flex-col gap-4" style={{ background: '#0a1a0f', border: '1px solid rgba(34,197,94,0.12)' }}>
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-[#F5F5F5]">
-            Áreas de vida
-          </h2>
-          <p className="text-xs text-[#71717A]">
+          <h2 className="text-sm font-semibold" style={{ color: '#f0fdf4' }}>Áreas de vida</h2>
+          <p className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>
             Activa las áreas relevantes y ordénalas por prioridad.
           </p>
         </div>
@@ -263,59 +258,40 @@ export default function SettingsClient({
             .map((area, idx) => (
               <div
                 key={area.name}
-                className="flex items-center gap-3 rounded-lg bg-[#0A0A0A] border border-[#1F1F1F] px-4 py-3"
+                className="flex items-center gap-3 rounded-lg px-4 py-3"
+                style={{ background: '#060f09', border: '1px solid rgba(34,197,94,0.1)' }}
               >
-                {/* Order buttons */}
                 <div className="flex flex-col gap-0.5">
-                  <button
-                    type="button"
-                    disabled={idx === 0}
-                    onClick={() => moveLifeArea(area.name, 'up')}
-                    className="text-[#71717A] hover:text-[#F5F5F5] disabled:opacity-20 disabled:cursor-not-allowed text-xs leading-none"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    disabled={idx === lifeAreas.length - 1}
-                    onClick={() => moveLifeArea(area.name, 'down')}
-                    className="text-[#71717A] hover:text-[#F5F5F5] disabled:opacity-20 disabled:cursor-not-allowed text-xs leading-none"
-                  >
-                    ▼
-                  </button>
+                  <button type="button" disabled={idx === 0} onClick={() => moveLifeArea(area.name, 'up')}
+                    className="disabled:opacity-20 disabled:cursor-not-allowed text-xs leading-none transition-colors"
+                    style={{ color: 'rgba(134,239,172,0.4)' }}>▲</button>
+                  <button type="button" disabled={idx === lifeAreas.length - 1} onClick={() => moveLifeArea(area.name, 'down')}
+                    className="disabled:opacity-20 disabled:cursor-not-allowed text-xs leading-none transition-colors"
+                    style={{ color: 'rgba(134,239,172,0.4)' }}>▼</button>
                 </div>
 
-                {/* Order number */}
-                <span className="text-xs text-[#71717A] w-5 text-right">
-                  {idx + 1}
-                </span>
+                <span className="text-xs w-5 text-right" style={{ color: 'rgba(134,239,172,0.3)' }}>{idx + 1}</span>
 
-                {/* Name */}
-                <span
-                  className={`flex-1 text-sm ${area.active ? 'text-[#F5F5F5]' : 'text-[#71717A]'}`}
-                >
+                <span className="flex-1 text-sm" style={{ color: area.active ? '#f0fdf4' : 'rgba(134,239,172,0.35)' }}>
                   {area.name}
                 </span>
 
-                {/* Toggle */}
                 <button
                   type="button"
                   onClick={() => toggleLifeArea(area.name)}
-                  className={[
-                    'relative inline-flex h-5 w-9 items-center rounded-full border transition-colors shrink-0',
-                    area.active
-                      ? 'bg-indigo-500/30 border-indigo-500/40'
-                      : 'bg-[#1F1F1F] border-[#2A2A2A]',
-                  ].join(' ')}
+                  className="relative inline-flex h-5 w-9 items-center rounded-full transition-all shrink-0"
+                  style={{
+                    background: area.active ? 'rgba(34,197,94,0.25)' : 'rgba(34,197,94,0.06)',
+                    border: `1px solid ${area.active ? 'rgba(34,197,94,0.5)' : 'rgba(34,197,94,0.12)'}`,
+                  }}
                   aria-label={`${area.active ? 'Desactivar' : 'Activar'} ${area.name}`}
                 >
                   <span
-                    className={[
-                      'inline-block h-3.5 w-3.5 rounded-full transition-transform',
-                      area.active
-                        ? 'translate-x-4 bg-indigo-400'
-                        : 'translate-x-1 bg-[#71717A]',
-                    ].join(' ')}
+                    className="inline-block h-3.5 w-3.5 rounded-full transition-transform"
+                    style={{
+                      transform: area.active ? 'translateX(1rem)' : 'translateX(0.25rem)',
+                      background: area.active ? '#22c55e' : 'rgba(134,239,172,0.3)',
+                    }}
                   />
                 </button>
               </div>
@@ -324,14 +300,11 @@ export default function SettingsClient({
       </section>
 
       {/* Quarterly goals */}
-      <section className="rounded-xl bg-[#111111] border border-[#1F1F1F] p-6 flex flex-col gap-4">
+      <section className="rounded-xl p-6 flex flex-col gap-4" style={{ background: '#0a1a0f', border: '1px solid rgba(34,197,94,0.12)' }}>
         <div className="flex flex-col gap-1">
-          <h2 className="text-sm font-semibold text-[#F5F5F5]">
-            Objetivos del trimestre
-          </h2>
-          <p className="text-xs text-[#71717A]">
-            Un objetivo por línea. AXIS los tendrá en cuenta al priorizar tus
-            tareas.
+          <h2 className="text-sm font-semibold" style={{ color: '#f0fdf4' }}>Objetivos del trimestre</h2>
+          <p className="text-xs" style={{ color: 'rgba(134,239,172,0.5)' }}>
+            Un objetivo por línea. AXIS los tendrá en cuenta al priorizar tus tareas.
           </p>
         </div>
 
@@ -347,24 +320,21 @@ export default function SettingsClient({
       {/* Submit */}
       <div className="flex items-center justify-between gap-4">
         {saveResult === 'success' && (
-          <p className="text-sm text-emerald-400">
-            ✓ Cambios guardados correctamente.
-          </p>
+          <p className="text-sm" style={{ color: '#4ade80' }}>✓ Cambios guardados correctamente.</p>
         )}
         {saveResult === 'error' && (
-          <p className="text-sm text-red-400">
-            Ocurrió un error al guardar. Intenta de nuevo.
-          </p>
+          <p className="text-sm text-red-400">Ocurrió un error al guardar. Intenta de nuevo.</p>
         )}
         {saveResult === null && <span />}
 
         <button
           type="submit"
           disabled={isSaving}
-          className="px-6 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-6 py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          style={{ background: '#22c55e', color: '#000' }}
         >
           {isSaving && (
-            <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <span className="w-3.5 h-3.5 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
           )}
           {isSaving ? 'Guardando...' : 'Guardar cambios'}
         </button>
