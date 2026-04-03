@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const AXIS_PHONE = process.env.NEXT_PUBLIC_AXIS_PHONE ?? '';
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +36,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      router.push('/dashboard');
+      setDone(true);
     } catch {
       setError('No se pudo conectar. Verifica tu conexión.');
     } finally {
@@ -42,60 +45,226 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center px-4">
-      <div className="w-full max-w-sm flex flex-col items-center gap-8">
-        {/* Logo */}
-        <div className="flex flex-col items-center gap-3">
-          <span className="text-5xl font-bold text-indigo-400 tracking-tight">AXIS</span>
-          <p className="text-sm text-[#71717A] text-center">Un último paso para activar tu cuenta.</p>
+    <div style={{
+      minHeight: '100vh',
+      background: '#080808',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem 1rem',
+      fontFamily: 'system-ui, sans-serif',
+    }}>
+      {/* Logo */}
+      <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
+        <div style={{
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          letterSpacing: '0.2em',
+          color: '#818cf8',
+          marginBottom: '0.5rem',
+        }}>
+          AXIS
         </div>
-
-        {/* Card */}
-        <div className="w-full rounded-xl bg-[#111111] border border-[#1F1F1F] p-8 flex flex-col gap-6">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-lg font-semibold text-[#F5F5F5]">
-              ¿Cuál es tu WhatsApp?
-            </h1>
-            <p className="text-sm text-[#71717A]">
-              AXIS te acompaña principalmente por WhatsApp. Necesitamos tu número para activar la conexión.
-            </p>
+        {!done && (
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
+            <Step n={1} label="Cuenta" done />
+            <div style={{ width: 24, height: 1, background: '#333' }} />
+            <Step n={2} label="WhatsApp" active />
           </div>
+        )}
+      </div>
 
-          <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="phone" className="text-xs font-medium text-[#71717A]">
-                Número con código de país
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                placeholder="18091234567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-lg border border-[#1F1F1F] bg-[#1A1A1A] px-3 py-2.5 text-sm text-[#F5F5F5] placeholder-[#3F3F3F] focus:outline-none focus:border-indigo-500 transition-colors"
-              />
-              {error != null && (
-                <p className="text-xs text-red-400">{error}</p>
-              )}
-            </div>
+      {/* Card */}
+      <div style={{
+        width: '100%',
+        maxWidth: 400,
+        background: '#111',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16,
+        padding: '2rem',
+      }}>
+        {done ? (
+          <SuccessState phone={phone} axisPhone={AXIS_PHONE} onDashboard={() => router.push('/dashboard')} />
+        ) : (
+          <FormState
+            phone={phone}
+            setPhone={setPhone}
+            isLoading={isLoading}
+            error={error}
+            onSubmit={handleSubmit}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
 
-            <button
-              type="submit"
-              disabled={isLoading || phone.trim() === ''}
-              className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-medium text-white transition-colors"
-            >
-              {isLoading ? 'Activando...' : 'Activar mi cuenta'}
-            </button>
-          </form>
+function Step({ n, label, done, active }: { n: number; label: string; done?: boolean; active?: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <div style={{
+        width: 22, height: 22, borderRadius: '50%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 11, fontWeight: 600,
+        background: done ? '#6366f1' : active ? 'rgba(99,102,241,0.15)' : 'transparent',
+        color: done ? 'white' : active ? '#818cf8' : '#555',
+        border: done ? 'none' : active ? '1px solid #6366f1' : '1px solid #333',
+      }}>
+        {done ? '✓' : n}
+      </div>
+      <span style={{ fontSize: 11, color: done ? '#a5b4fc' : active ? '#818cf8' : '#555' }}>{label}</span>
+    </div>
+  );
+}
 
-          {/* Instrucción WhatsApp */}
-          <div className="rounded-lg bg-[#0D1B0D] border border-[#1A3A1A] p-4 flex flex-col gap-2">
-            <p className="text-xs font-medium text-green-400">Siguiente paso</p>
-            <p className="text-xs text-[#71717A]">
-              Después de activar, escríbele un mensaje a AXIS por WhatsApp para que empiece a conocerte.
-            </p>
-          </div>
-        </div>
+function FormState({
+  phone, setPhone, isLoading, error, onSubmit,
+}: {
+  phone: string;
+  setPhone: (v: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  onSubmit: (e: React.FormEvent) => void;
+}) {
+  return (
+    <form onSubmit={(e) => void onSubmit(e)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div>
+        <h1 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#f5f5f5', marginBottom: '0.4rem' }}>
+          ¿Cuál es tu WhatsApp?
+        </h1>
+        <p style={{ fontSize: '0.8rem', color: '#71717a', lineHeight: 1.6 }}>
+          AXIS te acompaña principalmente por WhatsApp. Necesitamos tu número para reconocerte cuando escribas.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+        <label style={{ fontSize: '0.7rem', fontWeight: 500, color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Número con código de país
+        </label>
+        <input
+          type="tel"
+          placeholder="18091234567"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '0.7rem 0.9rem',
+            background: '#1a1a1a',
+            border: error ? '1px solid #f87171' : '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 8,
+            color: '#f5f5f5',
+            fontSize: '0.9rem',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
+        />
+        {error != null && (
+          <p style={{ fontSize: '0.75rem', color: '#f87171' }}>{error}</p>
+        )}
+      </div>
+
+      <button
+        type="submit"
+        disabled={isLoading || phone.trim() === ''}
+        style={{
+          width: '100%',
+          padding: '0.75rem',
+          background: isLoading || phone.trim() === '' ? 'rgba(99,102,241,0.4)' : '#6366f1',
+          color: 'white',
+          border: 'none',
+          borderRadius: 8,
+          fontSize: '0.875rem',
+          fontWeight: 600,
+          cursor: isLoading || phone.trim() === '' ? 'not-allowed' : 'pointer',
+          transition: 'background 0.2s',
+        }}
+      >
+        {isLoading ? 'Guardando...' : 'Guardar y continuar →'}
+      </button>
+    </form>
+  );
+}
+
+function SuccessState({ phone, axisPhone, onDashboard }: { phone: string; axisPhone: string; onDashboard: () => void }) {
+  const digits = phone.replace(/\D/g, '');
+  const waLink = axisPhone ? `https://wa.me/${axisPhone}?text=Hola%20AXIS` : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
+      {/* Check */}
+      <div style={{
+        width: 52, height: 52, borderRadius: '50%',
+        background: 'rgba(34,197,94,0.12)',
+        border: '1px solid rgba(34,197,94,0.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto',
+        fontSize: '1.4rem',
+      }}>
+        ✓
+      </div>
+
+      <div>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#f5f5f5', marginBottom: '0.4rem' }}>
+          ¡Número guardado!
+        </h2>
+        <p style={{ fontSize: '0.8rem', color: '#71717a', lineHeight: 1.6 }}>
+          Registramos <span style={{ color: '#a5b4fc' }}>+{digits}</span>.<br />
+          Ahora escríbele a AXIS por WhatsApp para que empiece a conocerte.
+        </p>
+      </div>
+
+      <div style={{
+        background: 'rgba(34,197,94,0.05)',
+        border: '1px solid rgba(34,197,94,0.15)',
+        borderRadius: 10,
+        padding: '1rem',
+        textAlign: 'left',
+      }}>
+        <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#4ade80', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Siguiente paso
+        </p>
+        <p style={{ fontSize: '0.78rem', color: '#71717a', lineHeight: 1.6 }}>
+          Escríbele cualquier mensaje a AXIS por WhatsApp. Él iniciará una conversación para conocerte — tus metas, tus áreas de vida, tu ritmo del día.
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {waLink && (
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
+              padding: '0.75rem',
+              background: '#16a34a',
+              color: 'white',
+              borderRadius: 8,
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              textDecoration: 'none',
+              textAlign: 'center',
+            }}
+          >
+            Escribirle a AXIS por WhatsApp →
+          </a>
+        )}
+        <button
+          onClick={onDashboard}
+          style={{
+            width: '100%',
+            padding: '0.65rem',
+            background: 'transparent',
+            color: '#71717a',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 8,
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+          }}
+        >
+          Ir al dashboard →
+        </button>
       </div>
     </div>
   );
