@@ -4,32 +4,46 @@ import BriefCard from '@/components/BriefCard';
 import TaskCard from '@/components/TaskCard';
 import OnboardingBanner from '@/components/OnboardingBanner';
 
-function todayLabel(): string {
-  return new Date().toLocaleDateString('es-ES', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-  });
-}
-
 function greet(name?: string | null): string {
   const h = new Date().getHours();
   const prefix = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
-  return name?.trim() ? `${prefix}, ${name.split(' ')[0]}.` : `${prefix}.`;
+  return name?.trim() ? `${prefix}, ${name.split(' ')[0]}` : prefix;
 }
 
-const EmptyCard = ({ title, hint }: { title: string; hint: string }) => (
-  <div
-    className="rounded-2xl p-6 flex flex-col items-center justify-center gap-3 min-h-[160px] text-center"
-    style={{ background: 'rgba(34,197,94,0.03)', border: '1px dashed rgba(34,197,94,0.15)' }}
-  >
-    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)' }}>
-      <svg width="18" height="18" fill="none" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round" viewBox="0 0 24 24">
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-      </svg>
-    </div>
-    <div>
-      <p className="text-sm font-medium" style={{ color: 'rgba(240,253,244,0.6)' }}>{title}</p>
-      <p className="text-xs mt-1" style={{ color: 'rgba(134,239,172,0.35)' }}>{hint}</p>
-    </div>
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+    <span style={{
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      background: '#22c55e',
+      boxShadow: '0 0 6px #22c55e',
+      flexShrink: 0,
+      display: 'inline-block',
+    }} />
+    <h2 style={{
+      margin: 0,
+      fontSize: 11,
+      fontWeight: 700,
+      letterSpacing: '0.15em',
+      textTransform: 'uppercase',
+      color: 'rgba(34,197,94,0.7)',
+    }}>{children}</h2>
+  </div>
+);
+
+const EmptyCard = ({ text }: { text: string }) => (
+  <div style={{
+    background: '#141417',
+    border: '1px dashed rgba(255,255,255,0.1)',
+    borderRadius: 12,
+    padding: '32px 20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 120,
+  }}>
+    <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center' }}>{text}</p>
   </div>
 );
 
@@ -38,78 +52,151 @@ export default async function DashboardPage() {
   const [brief, tasks] = await Promise.all([getTodaysBrief(user.id), getTodaysTasks(user.id)]);
   const onboardingComplete = user.onboardingStep >= 6;
 
+  const pendingCount = tasks.filter(t => t.status !== 'DONE').length;
+  const doneCount = tasks.filter(t => t.status === 'DONE').length;
+  const briefStatus = brief ? 'Listo' : 'Pendiente';
+
   return (
-    <div className="flex flex-col gap-8">
-      {/* ── Header ── */}
-      <div className="flex flex-col gap-1 pt-2">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: '#f0fdf4' }}>{greet(user.name)}</h1>
-            <p className="text-xs capitalize mt-0.5" style={{ color: 'rgba(134,239,172,0.45)', letterSpacing: '0.04em' }}>{todayLabel()}</p>
-          </div>
-          <div
-            className="ml-auto px-3 py-1.5 rounded-xl text-xs font-semibold"
-            style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}
-          >
-            Trial activo
-          </div>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
 
-        {/* Divider with glow */}
-        <div className="mt-4 h-px" style={{ background: 'linear-gradient(90deg, rgba(34,197,94,0.3), rgba(34,197,94,0.05) 60%, transparent)' }} />
-      </div>
-
-      {/* ── Onboarding banner ── */}
+      {/* Onboarding Banner */}
       {!onboardingComplete && <OnboardingBanner />}
 
-      {/* ── Stats row ── */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* HERO CARD */}
+      <div style={{
+        background: 'linear-gradient(135deg, #0f2a1a 0%, #0a1a10 100%)',
+        border: '1px solid rgba(34,197,94,0.2)',
+        borderRadius: 16,
+        padding: 28,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 24,
+      }}>
+        {/* Left side */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: '#f0fdf4' }}>
+            {greet(user.name)} 👋
+          </h1>
+          <p style={{ margin: 0, fontSize: 14, color: 'rgba(240,253,244,0.55)' }}>
+            Tu guía de hoy está lista en WhatsApp.
+          </p>
+          {user.phone && (
+            <a
+              href={`https://wa.me/${user.phone.replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                marginTop: 6,
+                padding: '9px 18px',
+                borderRadius: 8,
+                background: '#22c55e',
+                color: '#000',
+                fontWeight: 700,
+                fontSize: 13.5,
+                textDecoration: 'none',
+                alignSelf: 'flex-start',
+              }}
+            >
+              Abrir WhatsApp →
+            </a>
+          )}
+          {!user.phone && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              marginTop: 6,
+              padding: '9px 18px',
+              borderRadius: 8,
+              background: '#22c55e',
+              color: '#000',
+              fontWeight: 700,
+              fontSize: 13.5,
+              opacity: 0.5,
+              cursor: 'not-allowed',
+              alignSelf: 'flex-start',
+            }}>
+              Abrir WhatsApp →
+            </div>
+          )}
+        </div>
+
+        {/* Right side: task count */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 4,
+          flexShrink: 0,
+          background: 'rgba(34,197,94,0.08)',
+          border: '1px solid rgba(34,197,94,0.15)',
+          borderRadius: 12,
+          padding: '16px 24px',
+        }}>
+          <span style={{ fontSize: 42, fontWeight: 800, color: '#22c55e', lineHeight: 1 }}>
+            {tasks.length}
+          </span>
+          <span style={{ fontSize: 12, color: 'rgba(34,197,94,0.6)', fontWeight: 500 }}>
+            tareas hoy
+          </span>
+        </div>
+      </div>
+
+      {/* STATS ROW */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
         {[
-          { label: 'Tareas hoy', value: tasks.length, unit: 'pendientes' },
-          { label: 'Completadas', value: tasks.filter(t => t.status === 'DONE').length, unit: 'hoy' },
-          { label: 'Brief', value: brief ? '✓' : '—', unit: brief ? 'disponible' : 'sin datos' },
+          { label: 'Tareas pendientes', value: pendingCount },
+          { label: 'Completadas hoy', value: doneCount },
+          { label: 'Brief', value: briefStatus },
         ].map(stat => (
-          <div
-            key={stat.label}
-            className="rounded-2xl p-4 flex flex-col gap-1"
-            style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)' }}
-          >
-            <p className="text-xs font-medium" style={{ color: 'rgba(134,239,172,0.5)' }}>{stat.label}</p>
-            <p className="text-2xl font-bold" style={{ color: '#4ade80' }}>{stat.value}</p>
-            <p className="text-[10px]" style={{ color: 'rgba(134,239,172,0.35)' }}>{stat.unit}</p>
+          <div key={stat.label} style={{
+            background: '#141417',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: 12,
+            padding: '18px 20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+          }}>
+            <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>
+              {stat.label}
+            </p>
+            <p style={{ margin: 0, fontSize: 26, fontWeight: 800, color: '#4ade80' }}>
+              {stat.value}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* ── Two columns ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* TWO COLUMNS */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+
         {/* Brief del día */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
-            <h2 className="text-xs font-bold tracking-[0.15em] uppercase" style={{ color: 'rgba(34,197,94,0.7)' }}>Brief del día</h2>
-          </div>
+        <section>
+          <SectionTitle>Brief del día</SectionTitle>
           {brief ? (
             <BriefCard brief={brief} compact />
           ) : (
-            <EmptyCard title="Sin brief para hoy" hint="AXIS lo preparará vía WhatsApp esta mañana." />
+            <EmptyCard text="Sin brief disponible — AXIS lo preparará esta mañana vía WhatsApp." />
           )}
         </section>
 
-        {/* Tareas */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
-            <h2 className="text-xs font-bold tracking-[0.15em] uppercase" style={{ color: 'rgba(34,197,94,0.7)' }}>Tareas de hoy</h2>
-          </div>
+        {/* Tareas de hoy */}
+        <section>
+          <SectionTitle>Tareas de hoy</SectionTitle>
           {tasks.length > 0 ? (
-            <div className="flex flex-col gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {tasks.map(task => <TaskCard key={task.id} task={task} />)}
             </div>
           ) : (
-            <EmptyCard title="Sin tareas para hoy" hint="Dile a AXIS por WhatsApp qué quieres lograr." />
+            <EmptyCard text="Sin tareas para hoy — dile a AXIS por WhatsApp qué quieres lograr." />
           )}
         </section>
+
       </div>
     </div>
   );
