@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@axis/db';
 import { NextResponse } from 'next/server';
 
@@ -24,29 +24,10 @@ export async function POST(req: Request) {
     );
   }
 
-  // Get Clerk user info
-  const clerkUser = await currentUser();
-  const email = clerkUser?.emailAddresses[0]?.emailAddress ?? `${clerkId}@clerk.temp`;
-  const name = clerkUser?.fullName ?? clerkUser?.firstName ?? null;
-
-  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-  // Upsert: link clerkId to existing phone user, or create new
-  const user = await prisma.user.upsert({
-    where: { phone },
-    update: {
-      clerkId,
-      email,
-      ...(name ? { name } : {}),
-    },
-    create: {
-      clerkId,
-      email,
-      phone,
-      name,
-      trialEndsAt,
-      subscription: { create: { status: 'TRIAL' } },
-    },
+  // Update the existing user (auto-created by getAxisUser on first dashboard visit)
+  const user = await prisma.user.update({
+    where: { clerkId },
+    data: { phone },
   });
 
   return NextResponse.json({ success: true, userId: user.id });
