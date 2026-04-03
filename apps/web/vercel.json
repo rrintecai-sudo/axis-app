@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
+  "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm --filter=@axis/db generate && pnpm --filter=@axis/db build && pnpm --filter=@axis/web build",
   "framework": "nextjs"
 }
