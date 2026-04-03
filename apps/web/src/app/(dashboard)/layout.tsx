@@ -14,7 +14,7 @@ export default async function DashboardLayout({
         userName={user.name ?? null}
         userEmail={user.email}
       />
-      <main className="ml-60 min-h-screen">
+      <main className="ml-56 min-h-screen">
         <div className="max-w-5xl mx-auto px-8 py-10">{children}</div>
       </main>
     </div>
