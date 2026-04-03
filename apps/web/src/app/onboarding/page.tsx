@@ -69,28 +69,26 @@ export default function OnboardingPage() {
           border-color: ${GREEN};
         }
         .PhoneInputCountry {
+          position: relative;
           display: flex;
           align-items: center;
           gap: 0.35rem;
-          padding: 0.7rem 0 0.7rem 0;
+          padding: 0.7rem 0.7rem 0.7rem 0;
           border-right: 1px solid rgba(255,255,255,0.08);
-          padding-right: 0.7rem;
+          cursor: pointer;
         }
         .PhoneInputCountrySelect {
-          background: transparent;
-          border: none;
-          color: #f5f5f5;
-          font-size: 0.85rem;
-          outline: none;
-          cursor: pointer;
-          appearance: none;
-          width: 18px;
-          opacity: 0;
           position: absolute;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          opacity: 0;
+          cursor: pointer;
+          z-index: 1;
         }
         .PhoneInputCountrySelectArrow {
           color: #71717a;
           font-size: 0.6rem;
+          margin-left: 2px;
         }
         .PhoneInputInput {
           flex: 1;
