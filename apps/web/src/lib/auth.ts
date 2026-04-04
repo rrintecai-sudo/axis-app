@@ -24,15 +24,27 @@ export async function getAxisUser(): Promise<User> {
   const name = clerkUser?.fullName ?? clerkUser?.firstName ?? null;
   const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-  const user = await prisma.user.create({
-    data: {
-      clerkId,
-      email,
-      name,
-      trialEndsAt,
-      subscription: { create: { status: 'TRIAL' } },
-    },
-  });
-
-  return user;
+  try {
+    const user = await prisma.user.create({
+      data: {
+        clerkId,
+        email,
+        name,
+        trialEndsAt,
+        subscription: { create: { status: 'TRIAL' } },
+      },
+    });
+    return user;
+  } catch (e: unknown) {
+    // Email already exists (e.g. user recreated Clerk account) — update clerkId to current one
+    const code = (e as { code?: string })?.code;
+    if (code === 'P2002') {
+      const user = await prisma.user.update({
+        where: { email },
+        data: { clerkId },
+      });
+      return user;
+    }
+    throw e;
+  }
 }
