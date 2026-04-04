@@ -58457,15 +58457,28 @@ ${buildAreasMessage(firstName)}`;
       return handleGoalCollection(user, message);
     }
     case 4: {
+      const profileForStep4 = await import_db.prisma.userProfile.findUnique({
+        where: { userId: user.id },
+        include: { lifeAreas: true }
+      });
+      const areaNames = profileForStep4?.lifeAreas.map((a) => a.name.toLowerCase()) ?? [];
+      const msgLower = message.toLowerCase().trim();
+      const matchedArea = profileForStep4?.lifeAreas.find(
+        (a) => msgLower.includes(a.name.toLowerCase().split("/")[0]?.toLowerCase() ?? "")
+      );
+      if (!matchedArea && areaNames.length > 0) {
+        return buildNeglectedAreaQuestion(profileForStep4?.lifeAreas ?? []);
+      }
+      const neglectedName = matchedArea?.name ?? message.trim();
       let profile = await import_db.prisma.userProfile.findUnique({ where: { userId: user.id } });
       if (!profile) {
         profile = await import_db.prisma.userProfile.create({
-          data: { userId: user.id, neglectedArea: message.trim() }
+          data: { userId: user.id, neglectedArea: neglectedName }
         });
       } else {
         await import_db.prisma.userProfile.update({
           where: { userId: user.id },
-          data: { neglectedArea: message.trim() }
+          data: { neglectedArea: neglectedName }
         });
       }
       await advanceStep(user.id, 5);
@@ -58474,6 +58487,9 @@ ${buildAreasMessage(firstName)}`;
 ${TIME_QUESTION}`;
     }
     case 5: {
+      if (!/\d/.test(message)) {
+        return `No entend\xED eso como una hora. \xBFA qu\xE9 hora del d\xEDa quieres recibir tu gu\xEDa? Por ejemplo: *7am*, *8:30*, *6pm*.`;
+      }
       const time = parseTime(message);
       await import_db.prisma.userProfile.update({
         where: { userId: user.id },

@@ -372,16 +372,32 @@ ${buildAreasMessage(firstName)}`;
     }
 
     case 4: {
-      // Guardar área descuidada → preguntar hora
+      // Validar que la respuesta sea una de las áreas activas del usuario
+      const profileForStep4 = await prisma.userProfile.findUnique({
+        where: { userId: user.id },
+        include: { lifeAreas: true },
+      });
+      const areaNames = profileForStep4?.lifeAreas.map((a) => a.name.toLowerCase()) ?? [];
+      const msgLower = message.toLowerCase().trim();
+      const matchedArea = profileForStep4?.lifeAreas.find((a) =>
+        msgLower.includes(a.name.toLowerCase().split('/')[0]?.toLowerCase() ?? '')
+      );
+
+      if (!matchedArea && areaNames.length > 0) {
+        // No es una de las áreas — re-preguntar
+        return buildNeglectedAreaQuestion(profileForStep4?.lifeAreas ?? []);
+      }
+
+      const neglectedName = matchedArea?.name ?? message.trim();
       let profile = await prisma.userProfile.findUnique({ where: { userId: user.id } });
       if (!profile) {
         profile = await prisma.userProfile.create({
-          data: { userId: user.id, neglectedArea: message.trim() },
+          data: { userId: user.id, neglectedArea: neglectedName },
         });
       } else {
         await prisma.userProfile.update({
           where: { userId: user.id },
-          data: { neglectedArea: message.trim() },
+          data: { neglectedArea: neglectedName },
         });
       }
       await advanceStep(user.id, 5);
@@ -389,6 +405,10 @@ ${buildAreasMessage(firstName)}`;
     }
 
     case 5: {
+      // Validar que el mensaje contenga una hora reconocible
+      if (!/\d/.test(message)) {
+        return `No entendí eso como una hora. ¿A qué hora del día quieres recibir tu guía? Por ejemplo: *7am*, *8:30*, *6pm*.`;
+      }
       // Guardar hora → cerrar onboarding
       const time = parseTime(message);
       await prisma.userProfile.update({
