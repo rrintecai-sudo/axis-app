@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install prisma @prisma/client @vercel/functions fastify @fastify/cors && npx prisma generate",
+  "installCommand": "npm install prisma@5.22.0 @prisma/client@5.22.0 @vercel/functions fastify @fastify/cors && npx prisma generate",
   "buildCommand": "echo skip",
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/index" }
