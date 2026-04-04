@@ -15,8 +15,13 @@ export async function getAxisUser(): Promise<User> {
     redirect('/sign-in');
   }
 
-  const existing = await prisma.user.findUnique({ where: { clerkId } });
-  if (existing) return existing;
+  try {
+    const existing = await prisma.user.findUnique({ where: { clerkId } });
+    if (existing) return existing;
+  } catch (e) {
+    console.error('[AXIS] findUnique error:', e);
+    throw e;
+  }
 
   // First access after Clerk sign-up — auto-create user in DB
   const clerkUser = await currentUser();
@@ -36,14 +41,20 @@ export async function getAxisUser(): Promise<User> {
     });
     return user;
   } catch (e: unknown) {
+    console.error('[AXIS] create error:', e);
     // Email already exists (e.g. user recreated Clerk account) — update clerkId to current one
     const code = (e as { code?: string })?.code;
     if (code === 'P2002') {
-      const user = await prisma.user.update({
-        where: { email },
-        data: { clerkId },
-      });
-      return user;
+      try {
+        const user = await prisma.user.update({
+          where: { email },
+          data: { clerkId },
+        });
+        return user;
+      } catch (e2) {
+        console.error('[AXIS] P2002 update error:', e2);
+        throw e2;
+      }
     }
     throw e;
   }
