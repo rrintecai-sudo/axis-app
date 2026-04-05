@@ -58338,6 +58338,31 @@ ${areaList}
 
 \xBFCu\xE1l de estas sientes que has estado descuidando m\xE1s?`;
 }
+async function extractGoalWithAI(areaName, message) {
+  const response = await import_ai.openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    max_tokens: 200,
+    messages: [
+      {
+        role: "system",
+        content: "Eres un asistente que valida y extrae metas de vida. Responde SOLO con JSON v\xE1lido."
+      },
+      {
+        role: "user",
+        content: `Se le pregunt\xF3 al usuario cu\xE1l es su meta para el \xE1rea de vida "${areaName}" en los pr\xF3ximos 90 d\xEDas.
+El usuario respondi\xF3: "${message}"
+
+\xBFEs esto una meta v\xE1lida y espec\xEDfica para "${areaName}"? Una meta v\xE1lida describe algo concreto que el usuario quiere lograr. Respuestas vagas como "ya te lo dije", "no s\xE9", "nada", referencias a otra \xE1rea o respuestas sin sentido NO son v\xE1lidas.
+
+Responde con JSON: {"valid": true, "goal": "meta extra\xEDda y limpiada"} si es v\xE1lida, o {"valid": false, "goal": null} si no lo es.`
+      }
+    ],
+    response_format: { type: "json_object" }
+  });
+  const text = response.choices[0]?.message?.content ?? '{"valid":false,"goal":null}';
+  const parsed2 = JSON.parse(text);
+  return parsed2.valid ? parsed2.goal ?? message.trim() : null;
+}
 async function handleGoalCollection(user, message) {
   const profile = await getProfile(user.id);
   const areas = profile.lifeAreas;
@@ -58355,9 +58380,15 @@ ${TIME_QUESTION}`;
   if (!currentArea) {
     return advanceToNeglectedOrTime();
   }
+  const extractedGoal = await extractGoalWithAI(currentArea.name, message);
+  if (!extractedGoal) {
+    return `Entiendo, pero necesito que me des una meta espec\xEDfica para *${currentArea.name}*.
+
+\xBFQu\xE9 es lo m\xE1s importante que debe pasar en esa \xE1rea en los pr\xF3ximos 90 d\xEDas? Puede ser algo simple \u2014 una frase basta.`;
+  }
   await import_db.prisma.lifeArea.update({
     where: { id: currentArea.id },
-    data: { goal90days: message.trim() }
+    data: { goal90days: extractedGoal }
   });
   const nextArea = areas.find((a) => a.id !== currentArea.id && !a.goal90days);
   if (!nextArea) {

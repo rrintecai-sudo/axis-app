@@ -201,6 +201,33 @@ ${areaList}
 ¿Cuál de estas sientes que has estado descuidando más?`;
 }
 
+async function extractGoalWithAI(areaName: string, message: string): Promise<string | null> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    max_tokens: 200,
+    messages: [
+      {
+        role: 'system',
+        content: 'Eres un asistente que valida y extrae metas de vida. Responde SOLO con JSON válido.',
+      },
+      {
+        role: 'user',
+        content: `Se le preguntó al usuario cuál es su meta para el área de vida "${areaName}" en los próximos 90 días.
+El usuario respondió: "${message}"
+
+¿Es esto una meta válida y específica para "${areaName}"? Una meta válida describe algo concreto que el usuario quiere lograr. Respuestas vagas como "ya te lo dije", "no sé", "nada", referencias a otra área o respuestas sin sentido NO son válidas.
+
+Responde con JSON: {"valid": true, "goal": "meta extraída y limpiada"} si es válida, o {"valid": false, "goal": null} si no lo es.`,
+      },
+    ],
+    response_format: { type: 'json_object' },
+  });
+
+  const text = response.choices[0]?.message?.content ?? '{"valid":false,"goal":null}';
+  const parsed = JSON.parse(text) as { valid: boolean; goal: string | null };
+  return parsed.valid ? (parsed.goal ?? message.trim()) : null;
+}
+
 async function handleGoalCollection(user: User, message: string): Promise<string> {
   const profile = await getProfile(user.id);
   const areas = profile.lifeAreas;
@@ -223,10 +250,20 @@ async function handleGoalCollection(user: User, message: string): Promise<string
     return advanceToNeglectedOrTime();
   }
 
-  // Guardar la meta en el área actual
+  // Validar y extraer la meta con IA
+  const extractedGoal = await extractGoalWithAI(currentArea.name, message);
+
+  if (!extractedGoal) {
+    // Respuesta inválida — re-preguntar con contexto
+    return `Entiendo, pero necesito que me des una meta específica para *${currentArea.name}*.
+
+¿Qué es lo más importante que debe pasar en esa área en los próximos 90 días? Puede ser algo simple — una frase basta.`;
+  }
+
+  // Guardar la meta validada
   await prisma.lifeArea.update({
     where: { id: currentArea.id },
-    data: { goal90days: message.trim() },
+    data: { goal90days: extractedGoal },
   });
 
   // Buscar la siguiente área sin meta
