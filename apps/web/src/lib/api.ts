@@ -70,7 +70,12 @@ export async function fetchApi<T>(
     throw new Error(`API error ${res.status}: ${body}`);
   }
 
-  return res.json() as Promise<T>;
+  const json = await res.json();
+  // API wraps responses in { success, data } — unwrap if present
+  if (json && typeof json === 'object' && 'data' in json) {
+    return json.data as T;
+  }
+  return json as T;
 }
 
 // Domain helpers
